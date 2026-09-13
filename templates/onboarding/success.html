@@ -1,0 +1,145 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Complete! - MecGuraServe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        
+        .success-container { max-width: 600px; width: 100%; padding: 2rem; }
+        
+        .success-card {
+            background: white; border-radius: 20px; padding: 3rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1); text-align: center;
+        }
+        
+        .success-icon {
+            width: 100px; height: 100px; border-radius: 50%;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 2rem; font-size: 3rem; color: white;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        
+        .success-card h1 { font-size: 2rem; color: #333; margin-bottom: 0.5rem; }
+        .success-card > p { color: #666; margin-bottom: 2rem; }
+        
+        .resort-info {
+            background: #f8f9fa; border-radius: 12px; padding: 1.5rem;
+            margin-bottom: 2rem; text-align: left;
+        }
+        .resort-info h3 { color: #333; margin-bottom: 0.5rem; }
+        .resort-info p { color: #666; font-size: 0.9rem; }
+        
+        .info-row { display: flex; gap: 1rem; margin-bottom: 0.5rem; }
+        .info-row .label { font-weight: 600; color: #333; min-width: 120px; }
+        .info-row .value { color: #666; }
+        
+        .action-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+        
+        .btn {
+            padding: 14px 28px; border-radius: 10px; font-weight: 600;
+            text-decoration: none; transition: all 0.3s; display: inline-flex;
+            align-items: center; gap: 8px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102,126,234,0.4); }
+        .btn-secondary { background: #e9ecef; color: #666; }
+        .btn-secondary:hover { background: #dee2e6; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; }
+        
+        .quick-start {
+            margin-top: 2rem; text-align: left;
+            background: #f0f9ff; border-radius: 12px; padding: 1.5rem;
+        }
+        .quick-start h4 { color: #333; margin-bottom: 1rem; }
+        .quick-start ol { margin-left: 1.5rem; }
+        .quick-start li { color: #555; margin-bottom: 0.5rem; line-height: 1.5; }
+        
+        .credentials {
+            margin-top: 1.5rem; text-align: left;
+            background: #fef3c7; border-radius: 12px; padding: 1.5rem;
+        }
+        .credentials h4 { color: #92400e; margin-bottom: 1rem; }
+        .credentials table { width: 100%; }
+        .credentials td { padding: 5px 10px; font-size: 0.9rem; }
+        .credentials .label { font-weight: 600; color: #92400e; }
+        .credentials .value { font-family: monospace; background: white; padding: 2px 8px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="success-container">
+        <div class="success-card">
+            <div class="success-icon">
+                <i class="fas fa-check"></i>
+            </div>
+            <h1>Your Resort is Ready!</h1>
+            <p>MecGuraServe has been set up successfully for <strong>{{ tenant.name }}</strong></p>
+            
+            <div class="resort-info">
+                <h3><i class="fas fa-hotel"></i> {{ tenant.name }}</h3>
+                <div class="info-row">
+                    <span class="label">URL:</span>
+                    <span class="value">{{ tenant.slug }}.mecguraserve.com</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Dashboard:</span>
+                    <span class="value">/dashboard/admin/?tenant={{ tenant.slug }}</span>
+                </div>
+            </div>
+            
+            <div class="credentials">
+                <h4><i class="fas fa-key"></i> Login Credentials</h4>
+                <table>
+                    <tr>
+                        <td class="label">Username:</td>
+                        <td class="value">{{ tenant.slug }}_owner</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Password:</td>
+                        <td class="value">admin123</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="/dashboard/admin/?tenant={{ tenant.slug }}" class="btn btn-primary">
+                    <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+                </a>
+                <a href="/qr/generate/{{ tenant.slug }}/" class="btn btn-success">
+                    <i class="fas fa-qrcode"></i> Generate QR Codes
+                </a>
+                <a href="/menu/{{ tenant.slug }}/" class="btn btn-secondary">
+                    <i class="fas fa-utensils"></i> View Menu
+                </a>
+            </div>
+            
+            <div class="quick-start">
+                <h4><i class="fas fa-rocket"></i> Quick Start Guide</h4>
+                <ol>
+                    <li><strong>Login</strong> to your dashboard using credentials above</li>
+                    <li><strong>Add Menu Items</strong> - Add food items with photos and prices</li>
+                    <li><strong>Generate QR Codes</strong> - Create QR codes for each table</li>
+                    <li><strong>Print QR Codes</strong> - Place them on tables</li>
+                    <li><strong>Guests Scan & Order</strong> - Customers scan QR, browse menu, and order!</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,236 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Catalog - MecGuraServe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 2rem; text-align: center;
+        }
+        .header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .header p { opacity: 0.9; }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        
+        .category-section { margin-bottom: 3rem; }
+        .category-title {
+            font-size: 1.5rem; font-weight: 600; color: #333;
+            margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+        }
+        .category-title i { color: #667eea; }
+        
+        .services-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .service-card {
+            background: white; border-radius: 16px; overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08); transition: all 0.3s;
+            position: relative;
+        }
+        .service-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
+        
+        .service-card.active { border: 2px solid #10b981; }
+        .service-card.active::after {
+            content: '✓ ACTIVE'; position: absolute; top: 15px; right: 15px;
+            background: #10b981; color: white; padding: 4px 12px;
+            border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+        }
+        
+        .service-icon {
+            width: 60px; height: 60px; border-radius: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; color: white; margin: 1.5rem 1.5rem 1rem;
+        }
+        
+        .service-content { padding: 0 1.5rem 1.5rem; }
+        .service-name { font-size: 1.2rem; font-weight: 600; color: #333; margin-bottom: 0.5rem; }
+        .service-desc { color: #666; font-size: 0.9rem; line-height: 1.5; margin-bottom: 1rem; }
+        
+        .service-features { margin-bottom: 1rem; }
+        .service-features li {
+            list-style: none; padding: 4px 0; color: #555; font-size: 0.85rem;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .service-features li::before { content: '✓'; color: #10b981; font-weight: bold; }
+        
+        .service-pricing {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1rem 1.5rem; background: #f8f9fa; border-top: 1px solid #eee;
+        }
+        .price { font-size: 1.25rem; font-weight: 700; color: #667eea; }
+        .price .original { text-decoration: line-through; color: #999; font-size: 0.9rem; font-weight: 400; margin-left: 8px; }
+        .price.free { color: #10b981; }
+        
+        .btn {
+            padding: 10px 20px; border-radius: 8px; font-weight: 600;
+            text-decoration: none; transition: all 0.2s; border: none; cursor: pointer;
+        }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5a6fd6; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-outline { background: transparent; border: 2px solid #667eea; color: #667eea; }
+        .btn-outline:hover { background: #667eea; color: white; }
+        
+        .btn-group { display: flex; gap: 0.5rem; }
+        
+        .badge {
+            display: inline-block; padding: 4px 10px; border-radius: 12px;
+            font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;
+        }
+        .badge-popular { background: #fef3c7; color: #92400e; }
+        .badge-beta { background: #dbeafe; color: #1e40af; }
+        .badge-free { background: #d1fae5; color: #065f46; }
+        
+        .summary-bar {
+            background: white; border-radius: 12px; padding: 1.5rem;
+            margin-bottom: 2rem; display: flex; justify-content: space-around;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .summary-item { text-align: center; }
+        .summary-number { font-size: 2rem; font-weight: 700; color: #667eea; }
+        .summary-label { color: #666; font-size: 0.85rem; }
+        
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white; border-radius: 16px; padding: 2rem;
+            max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-puzzle-piece"></i> Service Catalog</h1>
+        <p>Add powerful features to your resort. Activate only what you need.</p>
+    </div>
+    
+    <div class="container">
+        <!-- Summary -->
+        <div class="summary-bar">
+            <div class="summary-item">
+                <div class="summary-number">{{ services.count }}</div>
+                <div class="summary-label">Total Services</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-number">{{ activated_ids|length }}</div>
+                <div class="summary-label">Active Services</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-number">{{ categories.count }}</div>
+                <div class="summary-label">Categories</div>
+            </div>
+        </div>
+        
+        <!-- Services by Category -->
+        {% for category in categories %}
+        <div class="category-section">
+            <h2 class="category-title">
+                <i class="{{ category.icon }}"></i> {{ category.name }}
+            </h2>
+            
+            <div class="services-grid">
+                {% for service in services %}
+                {% if service.category == category %}
+                <div class="service-card {% if service.id in activated_ids %}active{% endif %}">
+                    {% if service.is_popular %}
+                    <span class="badge badge-popular">⭐ Popular</span>
+                    {% endif %}
+                    {% if service.is_beta %}
+                    <span class="badge badge-beta">Beta</span>
+                    {% endif %}
+                    {% if service.price_type == 'free' %}
+                    <span class="badge badge-free">FREE</span>
+                    {% endif %}
+                    
+                    <div class="service-icon">
+                        <i class="{{ service.icon }}"></i>
+                    </div>
+                    
+                    <div class="service-content">
+                        <h3 class="service-name">{{ service.name }}</h3>
+                        <p class="service-desc">{{ service.short_description }}</p>
+                        
+                        <ul class="service-features">
+                            {% for feature in service.features|slice:":3" %}
+                            <li>{{ feature }}</li>
+                            {% endfor %}
+                        </ul>
+                        
+                        <a href="{% url 'service_detail' service.slug %}" class="btn btn-outline" style="width: 100%; text-align: center;">
+                            View Details & Manual
+                        </a>
+                    </div>
+                    
+                    <div class="service-pricing">
+                        <div class="price {% if service.price_type == 'free' %}free{% endif %}">
+                            {{ service.get_price_display }}
+                            {% if service.original_price > service.price %}
+                            <span class="original">₹{{ service.original_price }}</span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if service.id in activated_ids %}
+                        <form method="post" action="{% url 'deactivate_service' service.slug %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">Deactivate</button>
+                        </form>
+                        {% else %}
+                        <form method="post" action="{% url 'activate_service' service.slug %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success btn-sm">Activate</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <script>
+        // Service activation/deactivation
+        document.querySelectorAll('.btn-activate, .btn-deactivate').forEach(btn => {
+            btn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                const url = this.dataset.url;
+                
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                        },
+                    });
+                    
+                    if (response.ok) {
+                        location.reload();
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

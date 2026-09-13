@@ -1,0 +1,13 @@
+Django>=6.0,<7.0
+channels>=4.0
+channels-redis>=4.0
+segno>=1.0
+razorpay>=1.0
+Pillow>=10.0
+gunicorn>=22.0
+whitenoise>=6.0
+psycopg2-binary>=2.9
+redis>=5.0
+django-redis>=5.0
+dj-database-url>=2.0
+python-dotenv>=1.0

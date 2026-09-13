@@ -1,0 +1,186 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advance Payments - {{ tenant.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #333; }
+        .header { background: linear-gradient(135deg, {{ tenant.primary_color }}, {{ tenant.secondary_color }}); color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 1.4rem; }
+        .back-btn { color: white; text-decoration: none; }
+        .container { padding: 1.5rem; max-width: 1200px; margin: 0 auto; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+        .stat-card { background: white; border-radius: 10px; padding: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .stat-card .icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .stat-card .value { font-size: 1.5rem; font-weight: 700; }
+        .stat-card .label { font-size: 0.8rem; color: #666; }
+        .card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1.5rem; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #f0f0f0; }
+        .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 0.3rem; }
+        .btn-primary { background: {{ tenant.primary_color }}; color: white; }
+        .btn-success { background: #4CAF50; color: white; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        th { color: #666; font-weight: 500; font-size: 0.85rem; text-transform: uppercase; }
+        .method-badge { padding: 0.2rem 0.6rem; border-radius: 15px; font-size: 0.75rem; font-weight: 600; }
+        .method-cash { background: #E8F5E9; color: #388E3C; }
+        .method-card { background: #E3F2FD; color: #1565C0; }
+        .method-upi { background: #F3E5F5; color: #7B1FA2; }
+        .method-razorpay { background: #FFF3E0; color: #EF6C00; }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; border-radius: 12px; padding: 2rem; width: 100%; max-width: 450px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1><i class="fas fa-rupee-sign"></i> Advance Payments</h1>
+        <a href="{% url 'owner_dashboard' %}?tenant={{ tenant.slug }}" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+    </header>
+    
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="icon" style="color: {{ tenant.primary_color }};"><i class="fas fa-coins"></i></div>
+                <div class="value">₹{{ summary.total_today }}</div>
+                <div class="label">Today's Advances</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon" style="color: #4CAF50;"><i class="fas fa-check-circle"></i></div>
+                <div class="value">{{ summary.count_today }}</div>
+                <div class="label">Today's Transactions</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon" style="color: #2196F3;"><i class="fas fa-money-bill"></i></div>
+                <div class="value">₹{{ summary.cash_today }}</div>
+                <div class="label">Cash Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon" style="color: #FF9800;"><i class="fas fa-credit-card"></i></div>
+                <div class="value">₹{{ summary.online_today }}</div>
+                <div class="label">Online Today</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h2>Recent Payments</h2>
+                <button class="btn btn-primary" onclick="document.getElementById('addModal').classList.add('active')">
+                    <i class="fas fa-plus"></i> Add Payment
+                </button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Reference</th>
+                        <th>Recorded By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments %}
+                    <tr>
+                        <td>{{ payment.created_at|date:"d M Y H:i" }}</td>
+                        <td>{{ payment.customer_name|default:"N/A" }}</td>
+                        <td><strong>₹{{ payment.amount }}</strong></td>
+                        <td><span class="method-badge method-{{ payment.payment_method }}">{{ payment.get_payment_method_display }}</span></td>
+                        <td>{{ payment.reference_number|default:"-" }}</td>
+                        <td>{{ payment.recorded_by.username }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" style="text-align: center; padding: 2rem; color: #999;">No payments recorded yet</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Add Payment Modal -->
+    <div class="modal" id="addModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Advance Payment</h2>
+                <button class="modal-close" onclick="document.getElementById('addModal').classList.remove('active')">&times;</button>
+            </div>
+            <form onsubmit="addPayment(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Amount *</label>
+                        <input type="number" id="payAmount" min="1" required placeholder="Enter amount">
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Method *</label>
+                        <select id="payMethod" required>
+                            <option value="cash">Cash</option>
+                            <option value="card">Card</option>
+                            <option value="upi">UPI</option>
+                            <option value="razorpay">Online</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Customer Name</label>
+                        <input type="text" id="payName" placeholder="Customer name">
+                    </div>
+                    <div class="form-group">
+                        <label>Customer Phone</label>
+                        <input type="tel" id="payPhone" placeholder="Phone number">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Reference Number</label>
+                    <input type="text" id="payRef" placeholder="Transaction ID / Receipt number">
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="payNotes" rows="2" placeholder="Any notes..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-success" style="width: 100%;"><i class="fas fa-check"></i> Record Payment</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        const csrfToken = '{{ csrf_token }}';
+        
+        async function addPayment(e) {
+            e.preventDefault();
+            const data = {
+                amount: document.getElementById('payAmount').value,
+                payment_method: document.getElementById('payMethod').value,
+                customer_name: document.getElementById('payName').value,
+                customer_phone: document.getElementById('payPhone').value,
+                reference_number: document.getElementById('payRef').value,
+                notes: document.getElementById('payNotes').value,
+            };
+            
+            const response = await fetch('/dashboard/api/add-advance-payment/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify(data),
+            });
+            
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Error recording payment');
+            }
+        }
+    </script>
+</body>
+</html>

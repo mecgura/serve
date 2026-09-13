@@ -1,0 +1,332 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waiter Panel - {{ tenant.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #333; }
+        
+        .header {
+            background: linear-gradient(135deg, {{ tenant.primary_color }} 0%, {{ tenant.secondary_color }} 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        }
+        .header h1 { font-size: 1.4rem; display: flex; align-items: center; gap: 0.5rem; }
+        .header .badge { background: rgba(255,255,255,0.2); padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; }
+        
+        .summary-bar {
+            display: flex;
+            gap: 1.5rem;
+            padding: 1rem 1.5rem;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .summary-item { display: flex; align-items: center; gap: 0.5rem; }
+        .summary-item .value { font-size: 1.3rem; font-weight: 700; color: {{ tenant.primary_color }}; }
+        .summary-item .label { font-size: 0.8rem; color: #666; }
+        
+        .tables-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            padding: 1.5rem;
+        }
+        
+        .table-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .table-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+        }
+        
+        .table-header {
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .table-number {
+            font-size: 1.2rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .table-number i { color: #666; }
+        
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-empty { background: #f5f5f5; color: #999; }
+        .status-pending { background: #FFF3E0; color: #F57C00; }
+        .status-confirmed { background: #E3F2FD; color: #1976D2; }
+        .status-preparing { background: #F3E5F5; color: #7B1FA2; }
+        .status-ready { background: #E8F5E9; color: #388E3C; }
+        .status-served { background: #E0F7FA; color: #00838F; }
+        
+        .table-body {
+            padding: 1rem;
+        }
+        
+        .customer-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .customer-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: {{ tenant.primary_color }};
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .customer-details h4 { font-size: 0.95rem; margin-bottom: 0.1rem; }
+        .customer-details p { font-size: 0.8rem; color: #666; }
+        
+        .order-items {
+            margin-bottom: 0.75rem;
+        }
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.4rem 0;
+            font-size: 0.9rem;
+        }
+        .order-item:not(:last-child) {
+            border-bottom: 1px dashed #eee;
+        }
+        .item-qty {
+            font-weight: 600;
+            color: {{ tenant.primary_color }};
+            margin-right: 0.5rem;
+        }
+        .item-instructions {
+            font-size: 0.75rem;
+            color: #F44336;
+            font-style: italic;
+        }
+        
+        .table-footer {
+            padding: 0.75rem 1rem;
+            background: #fafafa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .order-total {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #333;
+        }
+        .order-time {
+            font-size: 0.8rem;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        
+        .payment-badge {
+            padding: 0.2rem 0.6rem;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .payment-paid { background: #E8F5E9; color: #388E3C; }
+        .payment-pending { background: #FFF3E0; color: #F57C00; }
+        .payment-cash { background: #E3F2FD; color: #1976D2; }
+        
+        .empty-table {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: #999;
+        }
+        .empty-table i { font-size: 2rem; margin-bottom: 0.5rem; display: block; }
+        .empty-table p { font-size: 0.9rem; }
+        
+        .refresh-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .refresh-btn:hover { background: rgba(255,255,255,0.3); }
+        
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        @media (max-width: 768px) {
+            .tables-grid { grid-template-columns: 1fr; padding: 1rem; }
+            .summary-bar { flex-wrap: wrap; gap: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>
+            <i class="fas fa-concierge-bell"></i>
+            {{ tenant.name }} - Waiter Panel
+        </h1>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <div class="live-dot"></div>
+            <span style="font-size: 0.85rem;">Live</span>
+            <button class="refresh-btn" onclick="location.reload()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+    </header>
+    
+    <div class="summary-bar">
+        <div class="summary-item">
+            <i class="fas fa-shopping-cart" style="color: {{ tenant.primary_color }};"></i>
+            <div>
+                <div class="value">{{ summary.total_orders }}</div>
+                <div class="label">Today's Orders</div>
+            </div>
+        </div>
+        <div class="summary-item">
+            <i class="fas fa-fire" style="color: #F57C00;"></i>
+            <div>
+                <div class="value">{{ summary.active_orders }}</div>
+                <div class="label">Active Orders</div>
+            </div>
+        </div>
+        <div class="summary-item">
+            <i class="fas fa-rupee-sign" style="color: #388E3C;"></i>
+            <div>
+                <div class="value">₹{{ summary.total_revenue }}</div>
+                <div class="label">Today's Revenue</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="tables-grid">
+        {% for data in table_data %}
+        <div class="table-card">
+            <div class="table-header">
+                <div class="table-number">
+                    <i class="fas fa-chair"></i>
+                    Table {{ data.table.table_number }}
+                    {% if data.table.location %}
+                    <span style="font-size: 0.75rem; color: #999; font-weight: 400;">({{ data.table.location }})</span>
+                    {% endif %}
+                </div>
+                <span class="status-badge status-{{ data.status }}">
+                    {% if data.status == 'empty' %}Empty
+                    {% elif data.status == 'pending' %}New Order
+                    {% elif data.status == 'confirmed' %}Confirmed
+                    {% elif data.status == 'preparing' %}Preparing
+                    {% elif data.status == 'ready' %}Ready to Serve
+                    {% elif data.status == 'served' %}Served
+                    {% endif %}
+                </span>
+            </div>
+            
+            {% if data.order %}
+            <div class="table-body">
+                <div class="customer-info">
+                    <div class="customer-avatar">
+                        {{ data.customer_name|first|upper }}
+                    </div>
+                    <div class="customer-details">
+                        <h4>{{ data.customer_name }}</h4>
+                        {% if data.customer_phone %}
+                        <p><i class="fas fa-phone"></i> {{ data.customer_phone }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="order-items">
+                    {% for item in data.items %}
+                    <div class="order-item">
+                        <div>
+                            <span class="item-qty">{{ item.quantity }}x</span>
+                            {{ item.menu_item.name }}
+                            {% if item.special_instructions %}
+                            <div class="item-instructions">
+                                <i class="fas fa-comment-dots"></i> {{ item.special_instructions }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <span>₹{{ item.total_price }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="table-footer">
+                <div>
+                    <span class="order-total">₹{{ data.total }}</span>
+                    <span class="payment-badge {% if data.payment_status == 'paid' %}payment-paid{% else %}{% if 'counter' in data.payment_method %}payment-cash{% else %}payment-pending{% endif %}{% endif %}">
+                        {% if data.payment_status == 'paid' %}Paid
+                        {% elif 'counter' in data.payment_method %}Pay at Counter
+                        {% else %}Pending{% endif %}
+                    </span>
+                </div>
+                <div class="order-time">
+                    <i class="fas fa-clock"></i>
+                    {{ data.time_since }} min ago
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-table">
+                <i class="fas fa-coffee"></i>
+                <p>No active order</p>
+                <span style="font-size: 0.75rem;">Waiting for customer...</span>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <script>
+        // Auto-refresh every 30 seconds
+        setTimeout(function() {
+            location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>

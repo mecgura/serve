@@ -1,0 +1,179 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Management - {{ tenant.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #333; }
+        .header { background: linear-gradient(135deg, {{ tenant.primary_color }}, {{ tenant.secondary_color }}); color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 1.4rem; }
+        .back-btn { color: white; text-decoration: none; }
+        .container { padding: 1.5rem; max-width: 1200px; margin: 0 auto; }
+        .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 0.3rem; }
+        .btn-primary { background: {{ tenant.primary_color }}; color: white; }
+        .btn-success { background: #4CAF50; color: white; }
+        .btn-danger { background: #f44336; color: white; }
+        .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.75rem; }
+        .card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1.5rem; }
+        .filters { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .filter-btn { padding: 0.5rem 1rem; border: 1px solid #ddd; border-radius: 20px; cursor: pointer; background: white; font-size: 0.85rem; }
+        .filter-btn.active { background: {{ tenant.primary_color }}; color: white; border-color: {{ tenant.primary_color }}; }
+        .order-card { border: 1px solid #e0e0e0; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+        .order-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem; }
+        .order-number { font-weight: 700; font-size: 1.1rem; }
+        .order-meta { display: flex; gap: 1.5rem; font-size: 0.85rem; color: #666; margin-bottom: 0.75rem; }
+        .order-items { font-size: 0.9rem; margin-bottom: 0.75rem; }
+        .order-items strong { color: #333; }
+        .order-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 0.75rem; border-top: 1px solid #f0f0f0; }
+        .order-total { font-size: 1.1rem; font-weight: 700; color: {{ tenant.primary_color }}; }
+        .status-badge { padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.75rem; font-weight: 600; }
+        .status-pending { background: #FFF3E0; color: #EF6C00; }
+        .status-confirmed { background: #E3F2FD; color: #1565C0; }
+        .status-preparing { background: #F3E5F5; color: #7B1FA2; }
+        .status-ready { background: #E8F5E9; color: #388E3C; }
+        .status-served { background: #E0F2F1; color: #00695C; }
+        .status-completed { background: #ECEFF1; color: #455A64; }
+        .status-cancelled { background: #FFEBEE; color: #C62828; }
+        .payment-badge { padding: 0.2rem 0.6rem; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
+        .payment-paid { background: #E8F5E9; color: #388E3C; }
+        .payment-pending { background: #FFF3E0; color: #EF6C00; }
+        .action-btns { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+        .empty-state { text-align: center; padding: 3rem; color: #999; }
+        .empty-state i { font-size: 3rem; margin-bottom: 1rem; display: block; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1><i class="fas fa-receipt"></i> Order Management</h1>
+        <a href="{% url 'owner_dashboard' %}?tenant={{ tenant.slug }}" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+    </header>
+    
+    <div class="container">
+        <div class="filters">
+            <a href="?status=all" class="filter-btn {% if current_status == 'all' %}active{% endif %}">All</a>
+            <a href="?status=pending" class="filter-btn {% if current_status == 'pending' %}active{% endif %}">⏳ Pending</a>
+            <a href="?status=confirmed" class="filter-btn {% if current_status == 'confirmed' %}active{% endif %}">✅ Confirmed</a>
+            <a href="?status=preparing" class="filter-btn {% if current_status == 'preparing' %}active{% endif %}">🍳 Preparing</a>
+            <a href="?status=ready" class="filter-btn {% if current_status == 'ready' %}active{% endif %}">🔔 Ready</a>
+            <a href="?status=served" class="filter-btn {% if current_status == 'served' %}active{% endif %}">🍽️ Served</a>
+            <a href="?status=completed" class="filter-btn {% if current_status == 'completed' %}active{% endif %}">✔️ Completed</a>
+            <a href="?status=cancelled" class="filter-btn {% if current_status == 'cancelled' %}active{% endif %}">❌ Cancelled</a>
+        </div>
+        
+        {% for order in orders %}
+        <div class="order-card">
+            <div class="order-header">
+                <div>
+                    <div class="order-number">#{{ order.order_number }}</div>
+                    <div class="order-meta">
+                        <span><i class="fas fa-table"></i> Table {{ order.table.table_number|default:"N/A" }}</span>
+                        <span><i class="fas fa-user"></i> {{ order.customer.name|default:"Guest" }}</span>
+                        {% if order.customer.phone %}
+                        <span><i class="fas fa-phone"></i> {{ order.customer.phone }}</span>
+                        {% endif %}
+                        <span><i class="fas fa-clock"></i> {{ order.created_at|time:"H:i" }}</span>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <span class="status-badge status-{{ order.status }}">{{ order.status|title }}</span>
+                    <div style="margin-top: 0.3rem;">
+                        <span class="payment-badge {% if order.payment_status == 'paid' %}payment-paid{% else %}payment-pending{% endif %}">
+                            {% if order.payment_status == 'paid' %}Paid{% else %}Pending{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="order-items">
+                <strong>Items:</strong>
+                {% for item in order.items.all %}
+                {{ item.menu_item.name }} x{{ item.quantity }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </div>
+            
+            {% if order.special_instructions %}
+            <div style="font-size: 0.85rem; color: #666; margin-bottom: 0.75rem;">
+                <i class="fas fa-comment"></i> {{ order.special_instructions }}
+            </div>
+            {% endif %}
+            
+            <div class="order-footer">
+                <div class="order-total">₹{{ order.total }}</div>
+                <div class="action-btns">
+                    {% if order.status == 'pending' %}
+                    <button class="btn btn-sm btn-success" onclick="updateStatus({{ order.id }}, 'confirmed')">
+                        <i class="fas fa-check"></i> Confirm
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="updateStatus({{ order.id }}, 'cancelled')">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    {% endif %}
+                    
+                    {% if order.status == 'confirmed' %}
+                    <button class="btn btn-sm btn-primary" onclick="updateStatus({{ order.id }}, 'preparing')">
+                        <i class="fas fa-fire"></i> Start Prep
+                    </button>
+                    {% endif %}
+                    
+                    {% if order.status == 'preparing' %}
+                    <button class="btn btn-sm btn-success" onclick="updateStatus({{ order.id }}, 'ready')">
+                        <i class="fas fa-bell"></i> Ready
+                    </button>
+                    {% endif %}
+                    
+                    {% if order.status == 'ready' %}
+                    <button class="btn btn-sm btn-primary" onclick="updateStatus({{ order.id }}, 'served')">
+                        <i class="fas fa-utensils"></i> Served
+                    </button>
+                    {% endif %}
+                    
+                    {% if order.status == 'served' %}
+                    <button class="btn btn-sm btn-success" onclick="updateStatus({{ order.id }}, 'completed')">
+                        <i class="fas fa-check-double"></i> Complete
+                    </button>
+                    {% endif %}
+                    
+                    {% if order.payment_status != 'paid' and order.status != 'cancelled' %}
+                    <button class="btn btn-sm btn-success" onclick="markPaid({{ order.id }})">
+                        <i class="fas fa-rupee-sign"></i> Mark Paid
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <i class="fas fa-receipt"></i>
+            <p>No orders found</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <script>
+        const csrfToken = '{{ csrf_token }}';
+        
+        async function updateStatus(orderId, status) {
+            await fetch('/dashboard/api/update-status/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify({order_id: orderId, status: status}),
+            });
+            location.reload();
+        }
+        
+        async function markPaid(orderId) {
+            await fetch('/dashboard/api/mark-paid/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify({order_id: orderId}),
+            });
+            location.reload();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+Watching for file changes with StatReloader
+HTTP GET /dashboard/whatsapp/ 302 [0.09, 127.0.0.1:53238]
+HTTP GET /dashboard/ 302 [0.02, 127.0.0.1:53239]
+Not Found: /accounts/login/
+HTTP GET /accounts/login/?next=/dashboard/ 404 [0.06, 127.0.0.1:53240]

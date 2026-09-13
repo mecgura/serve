@@ -1,0 +1,336 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thank You! - {{ tenant.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, {{ tenant.primary_color }} 0%, {{ tenant.secondary_color }} 100%);
+            min-height: 100vh; color: white;
+        }
+        
+        .container { max-width: 500px; margin: 0 auto; padding: 1.5rem; }
+        
+        /* Language Toggle */
+        .lang-toggle {
+            position: fixed; top: 1rem; right: 1rem;
+            background: rgba(255,255,255,0.2); border-radius: 20px;
+            padding: 0.3rem; display: flex; z-index: 100;
+        }
+        .lang-btn {
+            padding: 0.4rem 0.8rem; border: none; border-radius: 18px;
+            cursor: pointer; font-size: 0.8rem; font-weight: 500;
+            background: transparent; color: white; transition: all 0.3s;
+        }
+        .lang-btn.active { background: white; color: {{ tenant.primary_color }}; }
+        
+        /* Order Confirmed */
+        .order-confirmed {
+            text-align: center; padding: 2rem 0;
+            animation: fadeInDown 0.8s ease;
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .checkmark {
+            width: 100px; height: 100px; border-radius: 50%;
+            background: rgba(255,255,255,0.2); margin: 0 auto 1.5rem;
+            display: flex; align-items: center; justify-content: center;
+            animation: scaleIn 0.5s ease 0.3s both;
+        }
+        @keyframes scaleIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+        .checkmark i { font-size: 3rem; }
+        .order-confirmed h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+        .order-confirmed p { opacity: 0.9; font-size: 1rem; }
+        
+        /* Timer Card */
+        .timer-card {
+            background: rgba(255,255,255,0.15); backdrop-filter: blur(10px);
+            border-radius: 16px; padding: 1.5rem; margin: 1.5rem 0;
+            text-align: center; border: 1px solid rgba(255,255,255,0.2);
+        }
+        .timer-card h3 { font-size: 0.9rem; opacity: 0.9; margin-bottom: 1rem; }
+        .timer-display {
+            font-size: 3rem; font-weight: 700; font-family: 'Poppins', sans-serif;
+            margin-bottom: 0.5rem;
+        }
+        .timer-subtitle { font-size: 0.85rem; opacity: 0.8; }
+        
+        /* Waiter Card */
+        .waiter-card {
+            background: rgba(255,255,255,0.15); backdrop-filter: blur(10px);
+            border-radius: 16px; padding: 1.25rem; margin: 1rem 0;
+            display: flex; align-items: center; gap: 1rem;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .waiter-photo {
+            width: 60px; height: 60px; border-radius: 50%;
+            border: 3px solid white; object-fit: cover;
+        }
+        .waiter-photo-placeholder {
+            width: 60px; height: 60px; border-radius: 50%;
+            background: rgba(255,255,255,0.2); display: flex;
+            align-items: center; justify-content: center; font-size: 1.5rem;
+        }
+        .waiter-info h4 { font-size: 1rem; margin-bottom: 0.2rem; }
+        .waiter-info p { font-size: 0.85rem; opacity: 0.9; }
+        
+        /* Engagement Content */
+        .engagement-section {
+            margin-top: 1.5rem;
+        }
+        .section-title {
+            font-size: 1rem; font-weight: 600; margin-bottom: 1rem;
+            display: flex; align-items: center; gap: 0.5rem; opacity: 0.9;
+        }
+        
+        /* Fun Facts Carousel */
+        .fact-carousel {
+            background: rgba(255,255,255,0.15); backdrop-filter: blur(10px);
+            border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem;
+            border: 1px solid rgba(255,255,255,0.2);
+            min-height: 120px; display: flex; flex-direction: column;
+            justify-content: center; text-align: center;
+        }
+        .fact-carousel .fact-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+        .fact-carousel .fact-text { font-size: 1rem; line-height: 1.5; }
+        .fact-carousel .fact-source { font-size: 0.75rem; opacity: 0.7; margin-top: 0.5rem; }
+        .fact-nav { display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem; }
+        .fact-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.4); cursor: pointer; }
+        .fact-dot.active { background: white; }
+        
+        /* Resort Story */
+        .resort-story {
+            background: rgba(255,255,255,0.15); backdrop-filter: blur(10px);
+            border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .resort-story h4 { font-size: 1rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+        .resort-story p { font-size: 0.9rem; line-height: 1.6; opacity: 0.95; }
+        
+        /* Food Quiz */
+        .quiz-card {
+            background: rgba(255,255,255,0.15); backdrop-filter: blur(10px);
+            border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .quiz-card h4 { font-size: 1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .quiz-question { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; }
+        .quiz-options { display: flex; flex-direction: column; gap: 0.5rem; }
+        .quiz-option {
+            background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 10px; padding: 0.75rem 1rem; cursor: pointer;
+            transition: all 0.3s; font-size: 0.95rem;
+        }
+        .quiz-option:hover { background: rgba(255,255,255,0.2); }
+        .quiz-option.correct { background: #4CAF50; border-color: #4CAF50; }
+        .quiz-option.wrong { background: #f44336; border-color: #f44336; }
+        .quiz-result { margin-top: 1rem; font-size: 0.9rem; display: none; }
+        
+        /* Footer */
+        .footer { text-align: center; padding: 2rem 0 1rem; opacity: 0.8; font-size: 0.85rem; }
+        
+        /* Order Summary */
+        .order-summary {
+            background: rgba(255,255,255,0.15); backdrop-filter: blur(10px);
+            border-radius: 16px; padding: 1.25rem; margin: 1rem 0;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .order-summary h4 { font-size: 0.9rem; margin-bottom: 0.75rem; opacity: 0.9; }
+        .summary-row { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.4rem; }
+        .summary-total { font-weight: 700; font-size: 1.1rem; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 0.5rem; margin-top: 0.5rem; }
+    </style>
+</head>
+<body>
+    <!-- Language Toggle -->
+    <div class="lang-toggle">
+        <button class="lang-btn {% if lang == 'en' %}active{% endif %}" onclick="setLang('en')">EN</button>
+        <button class="lang-btn {% if lang == 'hi' %}active{% endif %}" onclick="setLang('hi')">हिं</button>
+    </div>
+    
+    <div class="container">
+        <!-- Order Confirmed -->
+        <div class="order-confirmed">
+            <div class="checkmark">
+                <i class="fas fa-check"></i>
+            </div>
+            <h1 id="title-confirmed">{% if lang == 'hi' %}ऑर्डर कन्फर्म!{% else %}Order Confirmed!{% endif %}</h1>
+            <p id="subtitle-confirmed">{% if lang == 'hi' %}आपका ऑर्डर सफलतापूर्वक ले लिया गया है{% else %}Your order has been successfully placed{% endif %}</p>
+        </div>
+        
+        <!-- Order Summary -->
+        <div class="order-summary">
+            <h4><i class="fas fa-receipt"></i> {% if lang == 'hi' %}ऑर्डर सारांश{% else %}Order Summary{% endif %}</h4>
+            <div class="summary-row">
+                <span>{% if lang == 'hi' %}ऑर्डर नं.{% else %}Order #{% endif %}</span>
+                <span>{{ order.order_number }}</span>
+            </div>
+            <div class="summary-row">
+                <span>{% if lang == 'hi' %}टेबल{% else %}Table{% endif %}</span>
+                <span>{{ order.table.table_number }}</span>
+            </div>
+            {% for item in order.items.all %}
+            <div class="summary-row">
+                <span>{{ item.quantity }}x {{ item.menu_item.name }}</span>
+                <span>₹{{ item.subtotal }}</span>
+            </div>
+            {% endfor %}
+            <div class="summary-row summary-total">
+                <span>{% if lang == 'hi' %}कुल{% else %}Total{% endif %}</span>
+                <span>₹{{ order.total }}</span>
+            </div>
+        </div>
+        
+        <!-- Estimated Time -->
+        <div class="timer-card">
+            <h3 id="title-prep">{% if lang == 'hi' %}अनुमानित तैयारी का समय{% else %}Estimated Preparation Time{% endif %}</h3>
+            <div class="timer-display" id="countdown">--:--</div>
+            <div class="timer-subtitle" id="subtitle-minutes">{% if lang == 'hi' %}मिनट{% else %}minutes{% endif %}</div>
+        </div>
+        
+        <!-- Assigned Waiter -->
+        {% if assigned_waiter %}
+        <div class="waiter-card">
+            {% if assigned_waiter.photo %}
+            <img src="{{ assigned_waiter.photo.url }}" class="waiter-photo">
+            {% else %}
+            <div class="waiter-photo-placeholder"><i class="fas fa-user"></i></div>
+            {% endif %}
+            <div class="waiter-info">
+                <h4 id="title-waiter">{% if lang == 'hi' %}आपका वेटर{% else %}Your Waiter{% endif %}</h4>
+                <p>{{ assigned_waiter.full_name }}</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Engagement Content -->
+        <div class="engagement-section">
+            <!-- Fun Food Facts -->
+            <div class="section-title">
+                <i class="fas fa-lightbulb"></i> <span id="title-facts">{% if lang == 'hi' %}मज़ेदार तथ्य{% else %}Fun Food Facts{% endif %}</span>
+            </div>
+            <div class="fact-carousel" id="factCarousel">
+                <div class="fact-icon">🍕</div>
+                <div class="fact-text" id="factText">{{ current_fact.text }}</div>
+                <div class="fact-source" id="factSource">{{ current_fact.source }}</div>
+            </div>
+            <div class="fact-nav" id="factNav"></div>
+            
+            <!-- Resort Story -->
+            <div class="section-title" style="margin-top: 1.5rem;">
+                <i class="fas fa-landmark"></i> <span id="title-story">{% if lang == 'hi' %}हमारी कहानी{% else %}Our Story{% endif %}</span>
+            </div>
+            <div class="resort-story">
+                <h4><i class="fas fa-history"></i> {{ tenant.name }}</h4>
+                <p id="resortStory">{{ resort_story }}</p>
+            </div>
+            
+            <!-- Food Quiz -->
+            <div class="section-title" style="margin-top: 1.5rem;">
+                <i class="fas fa-question-circle"></i> <span id="title-quiz">{% if lang == 'hi' %}फूड क्विज़{% else %}Food Quiz{% endif %}</span>
+            </div>
+            <div class="quiz-card">
+                <h4><i class="fas fa-brain"></i> {% if lang == 'hi' %}अपने ज्ञान की जाँच करें!{% else %}Test Your Knowledge!{% endif %}</h4>
+                <div class="quiz-question" id="quizQuestion">{{ current_quiz.question }}</div>
+                <div class="quiz-options" id="quizOptions">
+                    {% for option in current_quiz.options %}
+                    <div class="quiz-option" onclick="checkAnswer({{ forloop.counter0 }}, {{ current_quiz.correct_index }})">
+                        {{ option }}
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="quiz-result" id="quizResult"></div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>{{ tenant.footer_text }}</p>
+            <p style="margin-top: 0.5rem; font-size: 0.75rem;">Powered by MecGuraServe</p>
+        </div>
+    </div>
+    
+    <script>
+        const tenantSlug = '{{ tenant.slug }}';
+        const orderId = {{ order.id }};
+        const prepTime = {{ tenant.estimated_prep_time }};
+        const lang = '{{ lang }}';
+        
+        // Countdown Timer
+        let totalSeconds = prepTime * 60;
+        function updateCountdown() {
+            if (totalSeconds <= 0) {
+                document.getElementById('countdown').textContent = lang === 'hi' ? 'तैयार!' : 'Ready!';
+                return;
+            }
+            totalSeconds--;
+            const mins = Math.floor(totalSeconds / 60);
+            const secs = totalSeconds % 60;
+            document.getElementById('countdown').textContent = 
+                String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+        }
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+        
+        // Language Toggle
+        function setLang(newLang) {
+            window.location.href = '/menu/order-complete/?tenant=' + tenantSlug + '&order_id=' + orderId + '&lang=' + newLang;
+        }
+        
+        // Facts Carousel
+        const facts = {{ facts_json|safe }};
+        let currentFactIndex = 0;
+        
+        function showFact(index) {
+            const fact = facts[index];
+            document.getElementById('factText').textContent = lang === 'hi' ? fact.text_hi : fact.text;
+            document.getElementById('factSource').textContent = fact.source;
+            document.querySelectorAll('.fact-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+        }
+        
+        // Initialize fact dots
+        const factNav = document.getElementById('factNav');
+        facts.forEach((_, i) => {
+            const dot = document.createElement('div');
+            dot.className = 'fact-dot' + (i === 0 ? ' active' : '');
+            dot.onclick = () => { currentFactIndex = i; showFact(i); };
+            factNav.appendChild(dot);
+        });
+        
+        // Auto-rotate facts
+        setInterval(() => {
+            currentFactIndex = (currentFactIndex + 1) % facts.length;
+            showFact(currentFactIndex);
+        }, 5000);
+        
+        // Quiz
+        function checkAnswer(selected, correct) {
+            const options = document.querySelectorAll('.quiz-option');
+            options.forEach((opt, i) => {
+                opt.onclick = null;
+                if (i === correct) opt.classList.add('correct');
+                if (i === selected && i !== correct) opt.classList.add('wrong');
+            });
+            
+            const result = document.getElementById('quizResult');
+            result.style.display = 'block';
+            if (selected === correct) {
+                result.textContent = lang === 'hi' ? '🎉 बहुत बढ़िया! सही जवाब!' : '🎉 Excellent! Correct Answer!';
+            } else {
+                result.textContent = lang === 'hi' ? '❌ गलत! सही जवाब: ' + options[correct].textContent : '❌ Wrong! Correct answer: ' + options[correct].textContent;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complimentary Services - {{ tenant.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #333; }
+        .header { background: linear-gradient(135deg, {{ tenant.primary_color }}, {{ tenant.secondary_color }}); color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 1.4rem; }
+        .back-btn { color: white; text-decoration: none; }
+        .container { padding: 1.5rem; max-width: 1200px; margin: 0 auto; }
+        .card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1.5rem; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #f0f0f0; }
+        .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 0.3rem; }
+        .btn-primary { background: {{ tenant.primary_color }}; color: white; }
+        .btn-success { background: #4CAF50; color: white; }
+        .btn-danger { background: #f44336; color: white; }
+        .btn-secondary { background: #f0f0f0; color: #333; }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+        .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+        .service-card {
+            border: 1px solid #e0e0e0; border-radius: 12px; padding: 1.5rem;
+            display: flex; flex-direction: column; gap: 0.75rem;
+        }
+        .service-card.inactive { opacity: 0.6; border-style: dashed; }
+        .service-header { display: flex; justify-content: space-between; align-items: start; }
+        .service-name { font-size: 1.1rem; font-weight: 600; }
+        .service-desc { font-size: 0.85rem; color: #666; }
+        .service-meta { display: flex; gap: 1rem; font-size: 0.8rem; color: #666; }
+        .service-meta i { margin-right: 0.3rem; }
+        .service-value { font-size: 1.2rem; font-weight: 700; color: {{ tenant.primary_color }}; }
+        .toggle-switch { position: relative; width: 50px; height: 26px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; border-radius: 26px; transition: 0.3s; }
+        .toggle-slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
+        input:checked + .toggle-slider { background: #4CAF50; }
+        input:checked + .toggle-slider:before { transform: translateX(24px); }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; border-radius: 12px; padding: 2rem; width: 100%; max-width: 500px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1><i class="fas fa-gift"></i> Complimentary Services</h1>
+        <a href="{% url 'owner_dashboard' %}?tenant={{ tenant.slug }}" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+    </header>
+    
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h2>All Services</h2>
+                <button class="btn btn-primary" onclick="document.getElementById('addModal').classList.add('active')">
+                    <i class="fas fa-plus"></i> Add Service
+                </button>
+            </div>
+            <div class="services-grid">
+                {% for service in services %}
+                <div class="service-card {% if not service.is_active %}inactive{% endif %}">
+                    <div class="service-header">
+                        <div>
+                            <div class="service-name">{{ service.name }}</div>
+                            {% if service.description %}
+                            <div class="service-desc">{{ service.description }}</div>
+                            {% endif %}
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" {% if service.is_active %}checked{% endif %} onchange="toggleService({{ service.id }})">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="service-meta">
+                        {% if service.value > 0 %}
+                        <span><i class="fas fa-rupee-sign"></i> Value: ₹{{ service.value }}</span>
+                        {% endif %}
+                        {% if service.min_order_amount > 0 %}
+                        <span><i class="fas fa-shopping-cart"></i> Min Order: ₹{{ service.min_order_amount }}</span>
+                        {% endif %}
+                        <span><i class="fas fa-users"></i> Max {{ service.max_per_customer }}/customer</span>
+                    </div>
+                    <div class="service-meta">
+                        <span><i class="fas fa-check-circle"></i> Used {{ service.used_count }} times</span>
+                    </div>
+                </div>
+                {% empty %}
+                <div style="text-align: center; padding: 3rem; color: #999; grid-column: 1/-1;">
+                    <i class="fas fa-gift" style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
+                    <p>No complimentary services added yet</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Service Modal -->
+    <div class="modal" id="addModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Complimentary Service</h2>
+                <button class="modal-close" onclick="document.getElementById('addModal').classList.remove('active')">&times;</button>
+            </div>
+            <form onsubmit="addService(event)">
+                <div class="form-group">
+                    <label>Service Name *</label>
+                    <input type="text" id="serviceName" required placeholder="e.g., Welcome Drink, Free Dessert">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="serviceDesc" rows="2" placeholder="Describe the service..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Value (₹)</label>
+                        <input type="number" id="serviceValue" min="0" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Min Order (₹)</label>
+                        <input type="number" id="serviceMinOrder" min="0" placeholder="0 = Always free">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Max per Customer</label>
+                    <input type="number" id="serviceMaxPer" value="1" min="1">
+                </div>
+                <button type="submit" class="btn btn-success" style="width: 100%;"><i class="fas fa-plus"></i> Add Service</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        const csrfToken = '{{ csrf_token }}';
+        
+        async function addService(e) {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById('serviceName').value,
+                description: document.getElementById('serviceDesc').value,
+                value: document.getElementById('serviceValue').value || 0,
+                min_order_amount: document.getElementById('serviceMinOrder').value || 0,
+                max_per_customer: document.getElementById('serviceMaxPer').value,
+            };
+            
+            const response = await fetch('/dashboard/api/add-complimentary/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify(data),
+            });
+            
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Error adding service');
+            }
+        }
+        
+        async function toggleService(serviceId) {
+            await fetch('/dashboard/api/toggle-complimentary/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify({service_id: serviceId}),
+            });
+        }
+    </script>
+</body>
+</html>

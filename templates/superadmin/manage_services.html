@@ -1,0 +1,213 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Services - Superadmin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; }
+        
+        .sidebar {
+            position: fixed; left: 0; top: 0; bottom: 0; width: 260px;
+            background: linear-gradient(180deg, #1e3a5f 0%, #0d2137 100%);
+            color: white; z-index: 100;
+        }
+        .sidebar-header { padding: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-menu { padding: 1rem 0; }
+        .menu-section { padding: 0.5rem 1.5rem; font-size: 0.7rem; text-transform: uppercase; opacity: 0.6; margin-top: 0.5rem; }
+        .menu-item {
+            display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.5rem;
+            color: white; text-decoration: none; transition: all 0.2s;
+        }
+        .menu-item:hover { background: rgba(255,255,255,0.1); }
+        .menu-item.active { background: rgba(255,255,255,0.2); border-left: 3px solid white; }
+        .menu-item i { width: 20px; text-align: center; }
+        
+        .main-content { margin-left: 260px; min-height: 100vh; }
+        
+        .top-bar {
+            background: white; padding: 1rem 1.5rem;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .content { padding: 1.5rem; }
+        
+        .page-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .page-header h1 { font-size: 1.5rem; color: #333; }
+        
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 20px; border-radius: 8px; font-weight: 600;
+            text-decoration: none; transition: all 0.2s; border: none; cursor: pointer;
+        }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+        
+        .table-card {
+            background: white; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; font-weight: 600; color: #666; }
+        
+        .badge {
+            display: inline-block; padding: 4px 12px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 600;
+        }
+        .badge-active { background: #d1fae5; color: #065f46; }
+        .badge-inactive { background: #fee2e2; color: #991b1b; }
+        .badge-category { background: #dbeafe; color: #1e40af; }
+        
+        .toggle-switch {
+            position: relative; display: inline-block; width: 44px; height: 24px;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background: #ccc; transition: .4s; border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 18px; width: 18px;
+            left: 3px; bottom: 3px; background: white; transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background: #10b981; }
+        input:checked + .slider:before { transform: translateX(20px); }
+        
+        .actions { display: flex; gap: 8px; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>MecGuraServe</h2>
+            <p>Superadmin Panel</p>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-section">Main</div>
+            <a href="/superadmin/" class="menu-item">
+                <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+            </a>
+            
+            <div class="menu-section">Management</div>
+            <a href="/superadmin/tenants/" class="menu-item">
+                <i class="fas fa-hotel"></i> <span>Resorts</span>
+            </a>
+            <a href="/superadmin/services/" class="menu-item active">
+                <i class="fas fa-puzzle-piece"></i> <span>Services</span>
+            </a>
+            <a href="/superadmin/tenant-services/" class="menu-item">
+                <i class="fas fa-plug"></i> <span>Tenant Services</span>
+            </a>
+            
+            <div class="menu-section">Settings</div>
+            <a href="/superadmin/logout/" class="menu-item">
+                <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+            </a>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <div class="top-bar">
+            <h1>Manage Services</h1>
+            <div class="user-info">
+                <span>{{ user.username }}</span>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="page-header">
+                <h1>All Services ({{ services.count }})</h1>
+                <a href="/superadmin/services/add/" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Service
+                </a>
+            </div>
+            
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Service</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for service in services %}
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <i class="{{ service.icon }}" style="color: #3b82f6; font-size: 1.2rem;"></i>
+                                    <div>
+                                        <strong>{{ service.name }}</strong>
+                                        <p style="font-size: 0.8rem; color: #666;">{{ service.short_description|truncatewords:8 }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="badge badge-category">{{ service.category.name }}</span></td>
+                            <td><strong>{{ service.get_price_display }}</strong></td>
+                            <td>
+                                {% if service.is_active %}
+                                <span class="badge badge-active">Active</span>
+                                {% else %}
+                                <span class="badge badge-inactive">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="actions">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" {% if service.is_active %}checked{% endif %} 
+                                               onchange="toggleService({{ service.id }}, this.checked)">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <a href="/superadmin/services/{{ service.id }}/edit/" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="/superadmin/services/{{ service.id }}/delete/" class="btn btn-sm btn-danger"
+                                       onclick="return confirm('Delete this service?')">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        async function toggleService(serviceId, isActive) {
+            try {
+                const response = await fetch(`/superadmin/services/${serviceId}/toggle/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                });
+                
+                if (response.ok) {
+                    location.reload();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

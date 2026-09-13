@@ -1,0 +1,1239 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ tenant.name }} - Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed; left: 0; top: 0; bottom: 0; width: 260px;
+            background: linear-gradient(180deg, {{ tenant.primary_color }} 0%, {{ tenant.secondary_color }} 100%);
+            color: white; z-index: 100; overflow-y: auto;
+        }
+        .sidebar-header { padding: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-header h2 { font-size: 1.2rem; margin-bottom: 0.3rem; }
+        .sidebar-header p { font-size: 0.8rem; opacity: 0.8; }
+        
+        .sidebar-menu { padding: 1rem 0; }
+        .menu-section { padding: 0.5rem 1.5rem; font-size: 0.7rem; text-transform: uppercase; opacity: 0.6; margin-top: 0.5rem; }
+        .menu-item {
+            display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.5rem;
+            color: white; text-decoration: none; transition: all 0.2s; cursor: pointer;
+        }
+        .menu-item:hover { background: rgba(255,255,255,0.1); }
+        .menu-item.active { background: rgba(255,255,255,0.2); border-left: 3px solid white; }
+        .menu-item i { width: 20px; text-align: center; }
+        .menu-item span { font-size: 0.9rem; }
+        
+        /* Main Content */
+        .main-content { margin-left: 260px; min-height: 100vh; }
+        
+        .top-bar {
+            background: white; padding: 1rem 1.5rem; display: flex;
+            justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 50;
+        }
+        .top-bar h1 { font-size: 1.3rem; color: #333; }
+        .top-bar-actions { display: flex; gap: 1rem; align-items: center; }
+        .user-info { display: flex; align-items: center; gap: 0.5rem; }
+        .user-avatar { width: 35px; height: 35px; border-radius: 50%; background: {{ tenant.primary_color }}; color: white; display: flex; align-items: center; justify-content: center; }
+        
+        .content { padding: 1.5rem; }
+        
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+        .stat-card { background: white; border-radius: 12px; padding: 1.25rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .stat-card .icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .stat-card .value { font-size: 1.5rem; font-weight: 700; }
+        .stat-card .label { font-size: 0.8rem; color: #666; }
+        
+        /* Cards */
+        .card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #f0f0f0; }
+        .card-header h2 { font-size: 1.1rem; }
+        
+        /* Buttons */
+        .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 0.3rem; }
+        .btn-primary { background: {{ tenant.primary_color }}; color: white; }
+        .btn-success { background: #4CAF50; color: white; }
+        .btn-danger { background: #f44336; color: white; }
+        .btn-secondary { background: #f0f0f0; color: #333; }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+        
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        th { color: #666; font-weight: 500; font-size: 0.85rem; }
+        
+        /* Badges */
+        .badge { padding: 0.2rem 0.6rem; border-radius: 15px; font-size: 0.75rem; font-weight: 600; }
+        .badge-success { background: #E8F5E9; color: #388E3C; }
+        .badge-warning { background: #FFF3E0; color: #EF6C00; }
+        .badge-danger { background: #FFEBEE; color: #C62828; }
+        .badge-info { background: #E3F2FD; color: #1565C0; }
+        
+        /* Sections */
+        .section { display: none; }
+        .section.active { display: block; }
+        
+        /* Quick Actions Grid */
+        .quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; }
+        .quick-action {
+            background: white; border-radius: 12px; padding: 1.25rem; text-align: center;
+            text-decoration: none; color: #333; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;
+        }
+        .quick-action:hover { transform: translateY(-3px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .quick-action i { font-size: 1.5rem; margin-bottom: 0.5rem; display: block; }
+        .quick-action span { font-size: 0.85rem; font-weight: 500; }
+        
+        /* Lock Indicator */
+        .lock-icon { color: #f44336; margin-left: 0.3rem; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar { width: 70px; }
+            .sidebar-header h2, .sidebar-header p, .menu-item span, .menu-section { display: none; }
+            .menu-item { justify-content: center; padding: 1rem; }
+            .main-content { margin-left: 70px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>{{ tenant.name }}</h2>
+            <p>Admin Panel</p>
+        </div>
+        <nav class="sidebar-menu">
+            <div class="menu-section">Main</div>
+            <a class="menu-item active" onclick="showSection('dashboard')">
+                <i class="fas fa-home"></i><span>Dashboard</span>
+            </a>
+            
+            <div class="menu-section">Orders & Menu</div>
+            <a class="menu-item" onclick="showSection('orders')">
+                <i class="fas fa-receipt"></i><span>Orders</span>
+            </a>
+            <a class="menu-item" onclick="showSection('menu')">
+                <i class="fas fa-utensils"></i><span>Menu</span>
+            </a>
+            <a class="menu-item" onclick="showSection('kitchen')">
+                <i class="fas fa-fire"></i><span>Kitchen Display</span>
+            </a>
+            
+            <div class="menu-section">Tables & Reservations</div>
+            <a class="menu-item" onclick="showSection('tables')">
+                <i class="fas fa-th-large"></i><span>Tables</span>
+            </a>
+            <a class="menu-item" onclick="showSection('reservations')">
+                <i class="fas fa-calendar-check"></i><span>Reservations</span>
+            </a>
+            
+            <div class="menu-section">Staff & Finance</div>
+            <a class="menu-item" onclick="showSection('staff')">
+                <i class="fas fa-users"></i><span>Staff</span>
+            </a>
+            <a class="menu-item" onclick="showSection('payments')">
+                <i class="fas fa-rupee-sign"></i><span>Payments</span>
+            </a>
+            <a class="menu-item" onclick="showSection('coupons')">
+                <i class="fas fa-ticket-alt"></i><span>Coupons</span>
+            </a>
+            
+            <div class="menu-section">Settings</div>
+            <a class="menu-item" onclick="showSection('settings')">
+                <i class="fas fa-cog"></i><span>Settings</span>
+            </a>
+        </nav>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <h1 id="pageTitle">Dashboard</h1>
+            <div class="top-bar-actions">
+                <div class="user-info">
+                    <div class="user-avatar"><i class="fas fa-user"></i></div>
+                    <span>{{ user.username }}</span>
+                </div>
+                <a href="{% url 'superadmin_logout' %}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+        
+        <div class="content">
+            <!-- ========== DASHBOARD ========== -->
+            <div id="dashboard" class="section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="icon" style="color: {{ tenant.primary_color }};"><i class="fas fa-shopping-cart"></i></div>
+                        <div class="value">{{ today_stats.total_orders }}</div>
+                        <div class="label">Today's Orders</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon" style="color: #4CAF50;"><i class="fas fa-rupee-sign"></i></div>
+                        <div class="value">₹{{ today_stats.total_revenue }}</div>
+                        <div class="label">Today's Revenue</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon" style="color: #FF9800;"><i class="fas fa-clock"></i></div>
+                        <div class="value">{{ today_stats.pending_orders }}</div>
+                        <div class="label">Pending Orders</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon" style="color: #2196F3;"><i class="fas fa-calendar"></i></div>
+                        <div class="value">{{ week_stats.total_orders }}</div>
+                        <div class="label">This Week</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Quick Actions</h2>
+                    </div>
+                    <div class="quick-grid">
+                        <div class="quick-action" onclick="showSection('orders')">
+                            <i class="fas fa-plus-circle" style="color: {{ tenant.primary_color }};"></i>
+                            <span>New Order</span>
+                        </div>
+                        <div class="quick-action" onclick="showSection('tables')">
+                            <i class="fas fa-th-large" style="color: #4CAF50;"></i>
+                            <span>Tables</span>
+                        </div>
+                        <div class="quick-action" onclick="showSection('staff')">
+                            <i class="fas fa-user-plus" style="color: #FF9800;"></i>
+                            <span>Add Staff</span>
+                        </div>
+                        <div class="quick-action" onclick="showSection('menu')">
+                            <i class="fas fa-utensils" style="color: #9C27B0;"></i>
+                            <span>Menu</span>
+                        </div>
+                        <div class="quick-action" onclick="showSection('reservations')">
+                            <i class="fas fa-calendar-plus" style="color: #00BCD4;"></i>
+                            <span>Reservation</span>
+                        </div>
+                        <div class="quick-action" onclick="showSection('payments')">
+                            <i class="fas fa-money-bill" style="color: #E91E63;"></i>
+                            <span>Payments</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Recent Orders</h2>
+                        <button class="btn btn-sm btn-secondary" onclick="showSection('orders')">View All</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr><th>Order #</th><th>Table</th><th>Total</th><th>Status</th><th>Time</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                            <tr>
+                                <td><strong>{{ order.order_number }}</strong></td>
+                                <td>Table {{ order.table.table_number|default:"N/A" }}</td>
+                                <td>₹{{ order.total }}</td>
+                                <td><span class="badge badge-{{ order.status }}">{{ order.status|title }}</span></td>
+                                <td>{{ order.created_at|time:"H:i" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5" style="text-align: center; color: #999;">No orders yet</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ========== ORDERS ========== -->
+            <div id="orders" class="section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>All Orders</h2>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <select id="orderFilter" onchange="filterOrders()" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 8px;">
+                                <option value="all">All Orders</option>
+                                <option value="pending">Pending</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="preparing">Preparing</option>
+                                <option value="ready">Ready</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                    </div>
+                    <table id="ordersTable">
+                        <thead>
+                            <tr><th>Order #</th><th>Table</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for order in all_orders %}
+                            <tr data-status="{{ order.status }}">
+                                <td><strong>{{ order.order_number }}</strong></td>
+                                <td>Table {{ order.table.table_number|default:"N/A" }}</td>
+                                <td>{{ order.customer.name|default:"Guest" }}</td>
+                                <td>{% for item in order.items.all %}{{ item.menu_item.name }} x{{ item.quantity }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+                                <td>₹{{ order.total }}</td>
+                                <td><span class="badge badge-{{ order.status }}">{{ order.status|title }}</span></td>
+                                <td>
+                                    {% if order.status == 'pending' %}
+                                    <button class="btn btn-sm btn-success" onclick="updateOrder({{ order.id }}, 'confirmed')"><i class="fas fa-check"></i></button>
+                                    <button class="btn btn-sm btn-danger" onclick="updateOrder({{ order.id }}, 'cancelled')"><i class="fas fa-times"></i></button>
+                                    {% elif order.status == 'confirmed' %}
+                                    <button class="btn btn-sm btn-primary" onclick="updateOrder({{ order.id }}, 'preparing')"><i class="fas fa-fire"></i></button>
+                                    {% elif order.status == 'preparing' %}
+                                    <button class="btn btn-sm btn-success" onclick="updateOrder({{ order.id }}, 'ready')"><i class="fas fa-bell"></i></button>
+                                    {% elif order.status == 'ready' %}
+                                    <button class="btn btn-sm btn-primary" onclick="updateOrder({{ order.id }}, 'served')"><i class="fas fa-utensils"></i></button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ========== MENU ========== -->
+            <div id="menu" class="section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Menu Items</h2>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-primary" onclick="openModal('addCategoryModal')"><i class="fas fa-plus"></i> Category</button>
+                            <button class="btn btn-success" onclick="openModal('addItemModal')"><i class="fas fa-plus"></i> Item</button>
+                        </div>
+                    </div>
+                    {% for category in categories %}
+                    <div style="margin-bottom: 1.5rem;">
+                        <h3 style="color: {{ tenant.primary_color }}; margin-bottom: 0.75rem;"><i class="fas fa-folder"></i> {{ category.name }}</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+                            {% for item in category.items.all %}
+                            <div style="border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
+                                {% if item.image and item.image.name %}
+                                <img src="{{ item.image.url }}" alt="{{ item.name }}" style="width: 100%; height: 150px; object-fit: cover;">
+                                {% else %}
+                                <div style="width: 100%; height: 150px; background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%); display: flex; align-items: center; justify-content: center; color: #999; font-size: 2rem;">
+                                    <i class="fas fa-utensils"></i>
+                                </div>
+                                {% endif %}
+                                <div style="padding: 1rem;">
+                                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                                        <div>
+                                            <strong>{{ item.name }}</strong>
+                                            <div style="color: {{ tenant.primary_color }}; font-weight: 700;">₹{{ item.price }}</div>
+                                        </div>
+                                        <div style="display: flex; gap: 0.3rem;">
+                                            {% if item.is_vegetarian %}
+                                            <span style="color: #388E3C;">V</span>
+                                            {% else %}
+                                            <span style="color: #C62828;">NV</span>
+                                            {% endif %}
+                                            {% if item.is_bestseller %}
+                                            <span style="color: #FF9800;">★</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% if item.description %}
+                                    <div style="font-size: 0.85rem; color: #666; margin-top: 0.3rem;">{{ item.description|truncatewords:10 }}</div>
+                                    {% endif %}
+                                    <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+                                        <button class="btn btn-sm {% if item.is_available %}btn-danger{% else %}btn-success{% endif %}" onclick="toggleItem({{ item.id }})">
+                                            {% if item.is_available %}Available{% else %}Unavailable{% endif %}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- ========== KITCHEN ========== -->
+            <div id="kitchen" class="section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-fire"></i> Kitchen Display</h2>
+                        <button class="btn btn-sm btn-secondary" onclick="location.reload()"><i class="fas fa-sync"></i> Refresh</button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+                        {% for order in active_orders %}
+                        <div style="border: 2px solid {% if order.status == 'pending' %}#FF9800{% elif order.status == 'preparing' %}#9C27B0{% else %}#4CAF50{% endif %}; border-radius: 12px; padding: 1rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <strong>#{{ order.order_number }}</strong>
+                                <span class="badge badge-{{ order.status }}">{{ order.status|title }}</span>
+                            </div>
+                            <div style="font-size: 0.9rem; margin-bottom: 0.5rem;">Table {{ order.table.table_number|default:"N/A" }}</div>
+                            <div style="font-size: 0.85rem; color: #666;">
+                                {% for item in order.items.all %}
+                                <div>{{ item.quantity }}x {{ item.menu_item.name }}</div>
+                                {% endfor %}
+                            </div>
+                            <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
+                                {% if order.status == 'pending' %}
+                                <button class="btn btn-sm btn-success" onclick="updateOrder({{ order.id }}, 'confirmed')">Accept</button>
+                                {% elif order.status == 'confirmed' %}
+                                <button class="btn btn-sm btn-primary" onclick="updateOrder({{ order.id }}, 'preparing')">Start</button>
+                                {% elif order.status == 'preparing' %}
+                                <button class="btn btn-sm btn-success" onclick="updateOrder({{ order.id }}, 'ready')">Ready</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div style="text-align: center; padding: 3rem; color: #999; grid-column: 1/-1;">No active orders</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ========== TABLES ========== -->
+            <div id="tables" class="section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Table Management</h2>
+                        <button class="btn btn-primary" onclick="openModal('addTableModal')"><i class="fas fa-plus"></i> Add Table</button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                        {% for table in tables %}
+                        <div style="border: 2px solid {% if table.status == 'available' %}#4CAF50{% elif table.status == 'occupied' %}#f44336{% elif table.status == 'reserved' %}#FF9800{% else %}#9E9E9E{% endif %}; border-radius: 12px; padding: 1rem; text-align: center;">
+                            <div style="font-size: 1.5rem; font-weight: 700;">T{{ table.table_number }}</div>
+                            <div style="font-size: 0.85rem; color: #666;">{{ table.capacity }} seats</div>
+                            <div style="margin: 0.5rem 0;"><span class="badge badge-{{ table.status }}">{{ table.status|title }}</span></div>
+                            <div style="font-size: 0.8rem; color: #666;">{{ table.location|default:"Main Hall" }}</div>
+                            <div style="margin-top: 0.5rem;">
+                                <select onchange="updateTableStatus({{ table.id }}, this.value)" style="padding: 0.3rem; border: 1px solid #ddd; border-radius: 5px; font-size: 0.8rem;">
+                                    <option value="available" {% if table.status == 'available' %}selected{% endif %}>Available</option>
+                                    <option value="occupied" {% if table.status == 'occupied' %}selected{% endif %}>Occupied</option>
+                                    <option value="reserved" {% if table.status == 'reserved' %}selected{% endif %}>Reserved</option>
+                                    <option value="maintenance" {% if table.status == 'maintenance' %}selected{% endif %}>Maintenance</option>
+                                </select>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ========== RESERVATIONS ========== -->
+            <div id="reservations" class="section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Reservations</h2>
+                        <button class="btn btn-primary" onclick="openModal('addReservationModal')"><i class="fas fa-plus"></i> New Reservation</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr><th>Customer</th><th>Table</th><th>Date & Time</th><th>Guests</th><th>Advance</th><th>Status</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for res in reservations %}
+                            <tr>
+                                <td>{{ res.customer_name }}<br><small>{{ res.customer_phone }}</small></td>
+                                <td>Table {{ res.table.table_number }}</td>
+                                <td>{{ res.reservation_date }}<br><small>{{ res.start_time|time:"g:i A" }}</small></td>
+                                <td>{{ res.party_size }}</td>
+                                <td><span class="badge badge-{% if res.advance_status == 'paid' %}success{% else %}warning{% endif %}">₹{{ res.advance_amount }}</span></td>
+                                <td><span class="badge badge-{{ res.status }}">{{ res.status|title }}</span></td>
+                                <td>
+                                    {% if res.status != 'cancelled' %}
+                                    <button class="btn btn-sm btn-danger" onclick="cancelReservation({{ res.id }})"><i class="fas fa-times"></i></button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ========== STAFF ========== -->
+            <div id="staff" class="section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Staff Members</h2>
+                        <button class="btn btn-primary" onclick="openModal('addStaffModal')"><i class="fas fa-plus"></i> Add Staff</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr><th>Photo</th><th>Name</th><th>Role</th><th>Phone</th><th>Salary</th><th>Status</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for staff in staff_members %}
+                            <tr>
+                                <td>
+                                    {% if staff.photo %}
+                                    <img src="{{ staff.photo.url }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                                    {% else %}
+                                    <div style="width: 40px; height: 40px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center;"><i class="fas fa-user"></i></div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ staff.full_name }}</strong>
+                                    <br><small style="color: #666;">@{{ staff.user.username }}</small>
+                                    {% if staff.employee_id %}<br><small style="color: #999;">{{ staff.employee_id }}</small>{% endif %}
+                                </td>
+                                <td><span class="badge badge-info">{{ staff.get_role_display }}</span></td>
+                                <td>{{ staff.phone|default:"-" }}</td>
+                                <td>{% if staff.salary %}₹{{ staff.salary }}{% else %}-{% endif %}</td>
+                                <td><span class="badge badge-{% if staff.is_active %}success{% else %}danger{% endif %}"><i class="fas fa-lock lock-icon"></i> {% if staff.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-secondary" onclick="toggleStaff({{ staff.id }})">
+                                        <i class="fas fa-{% if staff.is_active %}lock{% else %}unlock{% endif %}"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ========== PAYMENTS ========== -->
+            <div id="payments" class="section">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="icon" style="color: {{ tenant.primary_color }};"><i class="fas fa-coins"></i></div>
+                        <div class="value">₹{{ payment_stats.total_today }}</div>
+                        <div class="label">Today's Advances</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon" style="color: #4CAF50;"><i class="fas fa-check-circle"></i></div>
+                        <div class="value">{{ payment_stats.count_today }}</div>
+                        <div class="label">Transactions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon" style="color: #2196F3;"><i class="fas fa-money-bill"></i></div>
+                        <div class="value">₹{{ payment_stats.cash_today }}</div>
+                        <div class="label">Cash</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon" style="color: #FF9800;"><i class="fas fa-credit-card"></i></div>
+                        <div class="value">₹{{ payment_stats.online_today }}</div>
+                        <div class="label">Online</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Payment Reminders</h2>
+                        <button class="btn btn-primary" onclick="sendPaymentReminders()"><i class="fas fa-bell"></i> Send Reminders</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr><th>Order #</th><th>Customer</th><th>Amount</th><th>Status</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for order in pending_payments %}
+                            <tr>
+                                <td><strong>{{ order.order_number }}</strong></td>
+                                <td>{{ order.customer.name|default:"Guest" }}<br><small>{{ order.customer.phone }}</small></td>
+                                <td>₹{{ order.total }}</td>
+                                <td><span class="badge badge-warning">Pending</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-success" onclick="markPaid({{ order.id }})"><i class="fas fa-check"></i> Mark Paid</button>
+                                    <button class="btn btn-sm btn-info" onclick="sendReminder({{ order.id }})"><i class="fas fa-bell"></i> Remind</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Recent Payments</h2>
+                        <button class="btn btn-primary" onclick="openModal('addPaymentModal')"><i class="fas fa-plus"></i> Add Payment</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr><th>Date</th><th>Customer</th><th>Amount</th><th>Method</th><th>Reference</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in payments %}
+                            <tr>
+                                <td>{{ payment.created_at|date:"d M H:i" }}</td>
+                                <td>{{ payment.customer_name|default:"N/A" }}</td>
+                                <td><strong>₹{{ payment.amount }}</strong></td>
+                                <td><span class="badge badge-info">{{ payment.get_payment_method_display }}</span></td>
+                                <td>{{ payment.reference_number|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ========== COUPONS ========== -->
+            <div id="coupons" class="section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Coupons & Offers</h2>
+                        <button class="btn btn-primary" onclick="openModal('addCouponModal')"><i class="fas fa-plus"></i> Add Coupon</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr><th>Code</th><th>Discount</th><th>Min Order</th><th>Valid Till</th><th>Uses</th><th>Status</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for coupon in coupons %}
+                            <tr>
+                                <td><strong>{{ coupon.code }}</strong></td>
+                                <td>{% if coupon.discount_type == 'percentage' %}{{ coupon.discount_value }}%{% else %}₹{{ coupon.discount_value }}{% endif %}</td>
+                                <td>₹{{ coupon.min_order_amount }}</td>
+                                <td>{{ coupon.valid_until|date:"d M Y"|default:"No expiry" }}</td>
+                                <td>{{ coupon.used_count }}/{{ coupon.max_uses|default:"∞" }}</td>
+                                <td><span class="badge badge-{% if coupon.is_active %}success{% else %}danger{% endif %}">{% if coupon.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-secondary" onclick="toggleCoupon({{ coupon.id }})">
+                                        <i class="fas fa-{% if coupon.is_active %}lock{% else %}unlock{% endif %}"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ========== SETTINGS ========== -->
+            <div id="settings" class="section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Restaurant Settings</h2>
+                    </div>
+                    <form onsubmit="saveSettings(event)">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Restaurant Name</label>
+                                <input type="text" value="{{ tenant.name }}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Phone</label>
+                                <input type="text" value="{{ tenant.phone }}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Tax (%)</label>
+                                <input type="number" value="{{ tenant.tax_percent }}" step="0.01" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Service Charge (%)</label>
+                                <input type="number" value="{{ tenant.service_charge_percent }}" step="0.01" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Reservation Advance (₹)</label>
+                                <input type="number" value="{{ tenant.reservation_advance }}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Est. Prep Time (min)</label>
+                                <input type="number" value="{{ tenant.estimated_prep_time }}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="margin-top: 1.5rem;"><i class="fas fa-save"></i> Save Settings</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Table Modal -->
+    <div class="modal" id="addTableModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; padding: 2rem; width: 100%; max-width: 400px;">
+            <h3 style="margin-bottom: 1rem;">Add New Table</h3>
+            <form onsubmit="addTable(event)">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Table Number *</label>
+                    <input type="text" id="tableNumber" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Capacity</label>
+                    <input type="number" id="tableCapacity" value="4" min="1" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Location</label>
+                    <input type="text" id="tableLocation" placeholder="e.g., Near Pool" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Add Table</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addTableModal')" style="flex: 1;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Add Staff Modal -->
+    <div class="modal" id="addStaffModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; padding: 2rem; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+            <h3 style="margin-bottom: 1rem;">Add Staff Member</h3>
+            <form onsubmit="addStaff(event)" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Photo</label>
+                    <input type="file" id="staffPhoto" accept="image/*">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">First Name *</label>
+                        <input type="text" id="firstName" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Last Name</label>
+                        <input type="text" id="lastName" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Username *</label>
+                        <input type="text" id="staffUsername" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Email *</label>
+                        <input type="email" id="staffEmail" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Password *</label>
+                        <input type="password" id="staffPassword" required minlength="6" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Phone</label>
+                        <input type="tel" id="staffPhone" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Role *</label>
+                        <select id="staffRole" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                            <option value="waiter">Waiter</option>
+                            <option value="kitchen">Kitchen Staff</option>
+                            <option value="manager">Manager</option>
+                            <option value="cashier">Cashier</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Employee ID</label>
+                        <input type="text" id="staffEmpId" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Salary (₹)</label>
+                        <input type="number" id="staffSalary" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Joining Date</label>
+                        <input type="date" id="staffJoinDate" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Add Staff</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addStaffModal')" style="flex: 1;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Add Reservation Modal -->
+    <div class="modal" id="addReservationModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; padding: 2rem; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+            <h3 style="margin-bottom: 1rem;">New Reservation</h3>
+            <form onsubmit="addReservation(event)">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Customer Name *</label>
+                        <input type="text" id="resName" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Phone *</label>
+                        <input type="tel" id="resPhone" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Table *</label>
+                        <select id="resTable" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                            {% for table in tables %}
+                            {% if table.status == 'available' %}
+                            <option value="{{ table.id }}">Table {{ table.table_number }} ({{ table.capacity }} seats)</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Party Size *</label>
+                        <input type="number" id="resParty" value="2" min="1" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Date *</label>
+                        <input type="date" id="resDate" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Advance (₹)</label>
+                        <input type="number" id="resAdvance" value="{{ tenant.reservation_advance }}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Start Time *</label>
+                        <input type="time" id="resStartTime" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">End Time *</label>
+                        <input type="time" id="resEndTime" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Add Reservation</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addReservationModal')" style="flex: 1;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Add Payment Modal -->
+    <div class="modal" id="addPaymentModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; padding: 2rem; width: 100%; max-width: 400px;">
+            <h3 style="margin-bottom: 1rem;">Add Advance Payment</h3>
+            <form onsubmit="addPayment(event)">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Amount (₹) *</label>
+                    <input type="number" id="payAmount" min="1" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Payment Method *</label>
+                    <select id="payMethod" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                        <option value="cash">Cash</option>
+                        <option value="card">Card</option>
+                        <option value="upi">UPI</option>
+                        <option value="razorpay">Online</option>
+                    </select>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Customer Name</label>
+                    <input type="text" id="payName" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Customer Phone</label>
+                    <input type="tel" id="payPhone" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Reference Number</label>
+                    <input type="text" id="payRef" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-success" style="flex: 1;">Record Payment</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addPaymentModal')" style="flex: 1;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Add Coupon Modal -->
+    <div class="modal" id="addCouponModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; padding: 2rem; width: 100%; max-width: 450px;">
+            <h3 style="margin-bottom: 1rem;">Add Coupon</h3>
+            <form onsubmit="addCoupon(event)">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Coupon Code *</label>
+                    <input type="text" id="couponCode" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; text-transform: uppercase;">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Discount Type *</label>
+                        <select id="couponType" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                            <option value="percentage">Percentage (%)</option>
+                            <option value="fixed">Fixed (₹)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Discount Value *</label>
+                        <input type="number" id="couponValue" min="1" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Min Order (₹)</label>
+                        <input type="number" id="couponMinOrder" value="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Max Uses</label>
+                        <input type="number" id="couponMaxUses" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Valid Until</label>
+                    <input type="date" id="couponValidUntil" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Add Coupon</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addCouponModal')" style="flex: 1;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Add Category Modal -->
+    <div class="modal" id="addCategoryModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; padding: 2rem; width: 100%; max-width: 400px;">
+            <h3 style="margin-bottom: 1rem;">Add Category</h3>
+            <form onsubmit="addCategory(event)">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Category Name *</label>
+                    <input type="text" id="catName" required placeholder="e.g., Starters, Main Course" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Add Category</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addCategoryModal')" style="flex: 1;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Add Item Modal -->
+    <div class="modal" id="addItemModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; padding: 2rem; width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto;">
+            <h3 style="margin-bottom: 1rem;">Add Menu Item</h3>
+            <form onsubmit="addItem(event)" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Category *</label>
+                    <select id="itemCategory" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Item Name *</label>
+                    <input type="text" id="itemName" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Price (INR) *</label>
+                        <input type="number" id="itemPrice" min="1" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Prep Time (min)</label>
+                        <input type="number" id="itemPrepTime" value="15" min="1" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    </div>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Description</label>
+                    <textarea id="itemDesc" rows="2" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;"></textarea>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Item Photo</label>
+                    <input type="file" id="itemImage" accept="image/*" onchange="previewItemImage(this)" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    <div id="itemImagePreview" style="margin-top: 0.5rem; text-align: center; padding: 1rem; background: #f5f5f5; border-radius: 8px; color: #999;">
+                        <i class="fas fa-image"></i> No image selected
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Vegetarian</label>
+                        <select id="itemVeg" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                            <option value="false">Non-Veg</option>
+                            <option value="true">Veg</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Bestseller</label>
+                        <select id="itemBestseller" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-success" style="flex: 1;">Add Item</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addItemModal')" style="flex: 1;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        const csrfToken = '{{ csrf_token }}';
+        const tenantSlug = '{{ tenant.slug }}';
+        
+        // Section Navigation
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            event.target.closest('.menu-item').classList.add('active');
+            document.getElementById('pageTitle').textContent = sectionId.charAt(0).toUpperCase() + sectionId.slice(1);
+        }
+        
+        // Modal Functions
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        // Image preview function
+        function previewItemImage(input) {
+            const preview = document.getElementById('itemImagePreview');
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = '<img src="' + e.target.result + '" style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px;">';
+                }
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.innerHTML = '<i class="fas fa-image"></i> No image selected';
+            }
+        }
+        
+        // API Functions
+        async function updateOrder(orderId, status) {
+            await fetch('/dashboard/api/update-status/?tenant=' + tenantSlug, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify({order_id: orderId, status: status}),
+            });
+            location.reload();
+        }
+        
+        async function addTable(e) {
+            e.preventDefault();
+            const data = {
+                table_number: document.getElementById('tableNumber').value,
+                capacity: parseInt(document.getElementById('tableCapacity').value),
+                location: document.getElementById('tableLocation').value,
+            };
+            await fetch('/dashboard/api/add-table/?tenant=' + tenantSlug, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify(data),
+            });
+            location.reload();
+        }
+        
+        async function updateTableStatus(tableId, status) {
+            await fetch('/dashboard/api/update-table-status/?tenant=' + tenantSlug, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify({table_id: tableId, status: status}),
+            });
+        }
+        
+        async function addStaff(e) {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('first_name', document.getElementById('firstName').value);
+            formData.append('last_name', document.getElementById('lastName').value);
+            formData.append('username', document.getElementById('staffUsername').value);
+            formData.append('email', document.getElementById('staffEmail').value);
+            formData.append('password', document.getElementById('staffPassword').value);
+            formData.append('phone', document.getElementById('staffPhone').value);
+            formData.append('role', document.getElementById('staffRole').value);
+            formData.append('employee_id', document.getElementById('staffEmpId').value);
+            formData.append('salary', document.getElementById('staffSalary').value);
+            formData.append('joining_date', document.getElementById('staffJoinDate').value);
+            
+            const photoInput = document.getElementById('staffPhoto');
+            if (photoInput.files[0]) formData.append('photo', photoInput.files[0]);
+            
+            await fetch('/dashboard/api/add-staff/?tenant=' + tenantSlug, {
+                method: 'POST',
+                headers: {'X-CSRFToken': csrfToken},
+                body: formData,
+            });
+            location.reload();
+        }
+        
+        async function toggleStaff(staffId) {
+            if (!confirm('Toggle staff status?')) return;
+            await fetch('/dashboard/api/toggle-staff/?tenant=' + tenantSlug, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify({staff_id: staffId}),
+            });
+            location.reload();
+        }
+        
+        async function addReservation(e) {
+            e.preventDefault();
+            const data = {
+                customer_name: document.getElementById('resName').value,
+                customer_phone: document.getElementById('resPhone').value,
+                table_id: document.getElementById('resTable').value,
+                party_size: document.getElementById('resParty').value,
+                reservation_date: document.getElementById('resDate').value,
+                start_time: document.getElementById('resStartTime').value,
+                end_time: document.getElementById('resEndTime').value,
+                advance_amount: document.getElementById('resAdvance').value,
+            };
+            await fetch('/dashboard/api/add-reservation/?tenant=' + tenantSlug, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify(data),
+            });
+            location.reload();
+        }
+        
+        async function cancelReservation(resId) {
+            if (!confirm('Cancel this reservation?')) return;
+            await fetch('/dashboard/api/cancel-reservation/?tenant=' + tenantSlug, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify({reservation_id: resId}),
+            });
+            location.reload();
+        }
+        
+        async function addPayment(e) {
+            e.preventDefault();
+            const data = {
+                amount: document.getElementById('payAmount').value,
+                payment_method: document.getElementById('payMethod').value,
+                customer_name: document.getElementById('payName').value,
+                customer_phone: document.getElementById('payPhone').value,
+                reference_number: document.getElementById('payRef').value,
+            };
+            await fetch('/dashboard/api/add-advance-payment/?tenant=' + tenantSlug, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify(data),
+            });
+            location.reload();
+        }
+        
+        async function markPaid(orderId) {
+            await fetch('/dashboard/api/mark-paid/?tenant=' + tenantSlug, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify({order_id: orderId}),
+            });
+            location.reload();
+        }
+        
+        async function addCategory(e) {
+            e.preventDefault();
+            const data = new FormData();
+            data.append('action', 'add_category');
+            data.append('name', document.getElementById('catName').value);
+            await fetch('/dashboard/menu/?tenant=' + tenantSlug, {
+                method: 'POST',
+                headers: {'X-CSRFToken': csrfToken},
+                body: data,
+            });
+            location.reload();
+        }
+        
+        async function addItem(e) {
+            e.preventDefault();
+            const data = new FormData();
+            data.append('action', 'add_item');
+            data.append('category_id', document.getElementById('itemCategory').value);
+            data.append('name', document.getElementById('itemName').value);
+            data.append('price', document.getElementById('itemPrice').value);
+            data.append('description', document.getElementById('itemDesc').value);
+            data.append('prep_time', document.getElementById('itemPrepTime').value);
+            data.append('is_vegetarian', document.getElementById('itemVeg').value === 'true' ? 'on' : '');
+            data.append('is_bestseller', document.getElementById('itemBestseller').value === 'true' ? 'on' : '');
+            
+            // Handle image upload
+            const imageInput = document.getElementById('itemImage');
+            if (imageInput.files[0]) {
+                data.append('image', imageInput.files[0]);
+            }
+            
+            await fetch('/dashboard/menu/?tenant=' + tenantSlug, {
+                method: 'POST',
+                headers: {'X-CSRFToken': csrfToken},
+                body: data,
+            });
+            location.reload();
+        }
+        
+        async function toggleItem(itemId) {
+            const data = new FormData();
+            data.append('action', 'toggle_item');
+            data.append('item_id', itemId);
+            await fetch('/dashboard/menu/?tenant=' + tenantSlug, {
+                method: 'POST',
+                headers: {'X-CSRFToken': csrfToken},
+                body: data,
+            });
+            location.reload();
+        }
+        
+        async function addCoupon(e) {
+            e.preventDefault();
+            const data = {
+                code: document.getElementById('couponCode').value.toUpperCase(),
+                discount_type: document.getElementById('couponType').value,
+                discount_value: document.getElementById('couponValue').value,
+                min_order_amount: document.getElementById('couponMinOrder').value,
+                max_uses: document.getElementById('couponMaxUses').value || null,
+                valid_until: document.getElementById('couponValidUntil').value || null,
+            };
+            await fetch('/dashboard/api/add-coupon/?tenant=' + tenantSlug, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify(data),
+            });
+            location.reload();
+        }
+        
+        async function toggleCoupon(couponId) {
+            await fetch('/dashboard/api/toggle-coupon/?tenant=' + tenantSlug, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify({coupon_id: couponId}),
+            });
+            location.reload();
+        }
+        
+        async function sendReminder(orderId) {
+            await fetch('/dashboard/api/send-reminder/?tenant=' + tenantSlug, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify({order_id: orderId}),
+            });
+            alert('Reminder sent!');
+        }
+        
+        async function sendPaymentReminders() {
+            if (!confirm('Send payment reminders to all pending orders?')) return;
+            await fetch('/dashboard/api/send-all-reminders/?tenant=' + tenantSlug, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+            });
+            alert('Reminders sent!');
+        }
+        
+        function filterOrders() {
+            const filter = document.getElementById('orderFilter').value;
+            const rows = document.querySelectorAll('#ordersTable tbody tr');
+            rows.forEach(row => {
+                if (filter === 'all' || row.dataset.status === filter) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

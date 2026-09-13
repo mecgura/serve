@@ -1,0 +1,439 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Management - {{ tenant.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #333; }
+        
+        .header {
+            background: linear-gradient(135deg, {{ tenant.primary_color }}, {{ tenant.secondary_color }});
+            color: white; padding: 1rem 1.5rem;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .header h1 { font-size: 1.4rem; }
+        .back-btn { color: white; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
+        
+        .container { padding: 1.5rem; max-width: 1400px; margin: 0 auto; }
+        
+        .tabs {
+            display: flex; gap: 0.5rem; margin-bottom: 1.5rem; background: white;
+            padding: 0.5rem; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .tab {
+            padding: 0.75rem 1.5rem; border: none; background: transparent;
+            border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.2s;
+        }
+        .tab.active { background: {{ tenant.primary_color }}; color: white; }
+        .tab:hover:not(.active) { background: #f0f0f0; }
+        
+        .section { display: none; }
+        .section.active { display: block; }
+        
+        .card {
+            background: white; border-radius: 12px; padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1.5rem;
+        }
+        .card-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #f0f0f0;
+        }
+        .card-header h2 { font-size: 1.2rem; }
+        
+        .btn {
+            padding: 0.6rem 1.2rem; border: none; border-radius: 8px;
+            cursor: pointer; font-weight: 500; display: inline-flex;
+            align-items: center; gap: 0.3rem; transition: all 0.2s;
+        }
+        .btn-primary { background: {{ tenant.primary_color }}; color: white; }
+        .btn-secondary { background: #f0f0f0; color: #333; }
+        .btn-success { background: #4CAF50; color: white; }
+        .btn-danger { background: #f44336; color: white; }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+        
+        /* Floor Plan */
+        .floor-plan {
+            background: #fafafa; border: 2px dashed #ddd; border-radius: 12px;
+            min-height: 500px; position: relative; overflow: hidden;
+        }
+        .table-dot {
+            position: absolute; width: 60px; height: 60px; border-radius: 50%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: move; transition: transform 0.2s; font-size: 0.75rem; font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .table-dot:hover { transform: scale(1.1); }
+        .table-dot.round { border-radius: 50%; }
+        .table-dot.square { border-radius: 8px; }
+        .table-dot.rectangle { border-radius: 8px; width: 80px; }
+        .table-dot.available { background: #4CAF50; color: white; }
+        .table-dot.occupied { background: #f44336; color: white; }
+        .table-dot.reserved { background: #FF9800; color: white; }
+        .table-dot.maintenance { background: #9E9E9E; color: white; }
+        .table-dot .table-num { font-size: 0.9rem; }
+        .table-dot .table-cap { font-size: 0.6rem; opacity: 0.8; }
+        
+        /* Table List */
+        .table-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+        .table-item {
+            border: 1px solid #e0e0e0; border-radius: 10px; padding: 1rem;
+            display: flex; flex-direction: column; gap: 0.5rem;
+        }
+        .table-item-header { display: flex; justify-content: space-between; align-items: center; }
+        .table-item-header h3 { font-size: 1.1rem; }
+        .status-badge {
+            padding: 0.2rem 0.6rem; border-radius: 15px; font-size: 0.75rem; font-weight: 600;
+        }
+        .status-available { background: #E8F5E9; color: #388E3C; }
+        .status-occupied { background: #FFEBEE; color: #C62828; }
+        .status-reserved { background: #FFF3E0; color: #EF6C00; }
+        .status-maintenance { background: #F5F5F5; color: #616161; }
+        
+        .table-meta { font-size: 0.85rem; color: #666; }
+        .table-meta i { width: 16px; margin-right: 0.3rem; }
+        
+        .table-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+        
+        /* Modal */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white; border-radius: 12px; padding: 2rem; width: 100%;
+            max-width: 500px; max-height: 90vh; overflow-y: auto;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #666; }
+        
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.9rem; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem;
+        }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: {{ tenant.primary_color }}; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        
+        .waiter-assign {
+            display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;
+        }
+        .waiter-assign select { flex: 1; padding: 0.5rem; border: 1px solid #ddd; border-radius: 6px; }
+        
+        .qr-section { text-align: center; padding: 1rem; background: #f9f9f9; border-radius: 8px; }
+        .qr-section img { max-width: 150px; margin: 0.5rem 0; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1><i class="fas fa-th-large"></i> Table Management</h1>
+        <a href="{% url 'owner_dashboard' %}?tenant={{ tenant.slug }}" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+    </header>
+    
+    <div class="container">
+        <div class="tabs">
+            <button class="tab active" onclick="showSection('layout')"><i class="fas fa-map"></i> Floor Plan</button>
+            <button class="tab" onclick="showSection('list')"><i class="fas fa-list"></i> Table List</button>
+            <button class="tab" onclick="showSection('qr')"><i class="fas fa-qrcode"></i> QR Codes</button>
+            <button class="tab" onclick="showSection('assign')"><i class="fas fa-user-tie"></i> Waiter Assign</button>
+        </div>
+        
+        <!-- Floor Plan Section -->
+        <div id="layout" class="section active">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Floor Plan Layout</h2>
+                    <button class="btn btn-primary" onclick="openAddTableModal()"><i class="fas fa-plus"></i> Add Table</button>
+                </div>
+                <div class="floor-plan" id="floorPlan">
+                    {% for table in tables %}
+                    <div class="table-dot {{ table.table_shape }} {{ table.status }}" 
+                         id="table-{{ table.id }}"
+                         style="left: {{ table.pos_x }}px; top: {{ table.pos_y }}px;"
+                         draggable="true"
+                         ondragstart="dragStart(event, {{ table.id }})"
+                         onclick="showTableDetails({{ table.id }})">
+                        <span class="table-num">T{{ table.table_number }}</span>
+                        <span class="table-cap">{{ table.capacity }} seats</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div style="margin-top: 1rem; display: flex; gap: 1rem; font-size: 0.85rem;">
+                    <span><span style="display:inline-block;width:12px;height:12px;background:#4CAF50;border-radius:50%;"></span> Available</span>
+                    <span><span style="display:inline-block;width:12px;height:12px;background:#f44336;border-radius:50%;"></span> Occupied</span>
+                    <span><span style="display:inline-block;width:12px;height:12px;background:#FF9800;border-radius:50%;"></span> Reserved</span>
+                    <span><span style="display:inline-block;width:12px;height:12px;background:#9E9E9E;border-radius:50%;"></span> Maintenance</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Table List Section -->
+        <div id="list" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h2>All Tables ({{ tables|length }})</h2>
+                    <button class="btn btn-primary" onclick="openAddTableModal()"><i class="fas fa-plus"></i> Add Table</button>
+                </div>
+                <div class="table-list">
+                    {% for table in tables %}
+                    <div class="table-item">
+                        <div class="table-item-header">
+                            <h3>Table {{ table.table_number }}</h3>
+                            <span class="status-badge status-{{ table.status }}">{{ table.status|title }}</span>
+                        </div>
+                        <div class="table-meta">
+                            <div><i class="fas fa-chair"></i> {{ table.capacity }} seats</div>
+                            {% if table.location %}<div><i class="fas fa-map-marker-alt"></i> {{ table.location }}</div>{% endif %}
+                            {% if table.assigned_waiter %}<div><i class="fas fa-user"></i> {{ table.assigned_waiter.user.get_full_name|default:table.assigned_waiter.user.username }}</div>{% endif %}
+                        </div>
+                        <div class="table-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="showTableDetails({{ table.id }})"><i class="fas fa-edit"></i> Edit</button>
+                            <a href="{% url 'download_table_qr' table.id %}" class="btn btn-secondary btn-sm" download><i class="fas fa-download"></i> QR</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- QR Codes Section -->
+        <div id="qr" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h2>QR Codes for All Tables</h2>
+                    <a href="{% url 'download_all_qr' %}" class="btn btn-success"><i class="fas fa-download"></i> Download All (ZIP)</a>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                    {% for table in tables %}
+                    <div class="qr-section">
+                        <h4>Table {{ table.table_number }}</h4>
+                        <img src="{% url 'download_table_qr' table.id %}" alt="QR T{{ table.table_number }}">
+                        <p style="font-size: 0.8rem; color: #666;">{{ table.capacity }} seats</p>
+                        <a href="{% url 'download_table_qr' table.id %}" class="btn btn-sm btn-secondary" style="margin-top: 0.5rem;" download>
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Waiter Assignment Section -->
+        <div id="assign" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Waiter Assignment</h2>
+                </div>
+                <div class="table-list">
+                    {% for table in tables %}
+                    <div class="table-item">
+                        <div class="table-item-header">
+                            <h3>Table {{ table.table_number }}</h3>
+                            <span class="status-badge status-{{ table.status }}">{{ table.status|title }}</span>
+                        </div>
+                        <div class="waiter-assign">
+                            <i class="fas fa-user-tie"></i>
+                            <select onchange="assignWaiter({{ table.id }}, this.value)">
+                                <option value="">-- No Waiter --</option>
+                                {% for waiter in waiters %}
+                                <option value="{{ waiter.id }}" {% if table.assigned_waiter == waiter %}selected{% endif %}>
+                                    {{ waiter.user.get_full_name|default:waiter.user.username }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Table Modal -->
+    <div class="modal" id="addTableModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Table</h2>
+                <button class="modal-close" onclick="closeModal('addTableModal')">&times;</button>
+            </div>
+            <form onsubmit="addTable(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Table Number *</label>
+                        <input type="text" id="newTableNumber" required placeholder="e.g., T6">
+                    </div>
+                    <div class="form-group">
+                        <label>Capacity</label>
+                        <input type="number" id="newTableCapacity" value="4" min="1" max="20">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" id="newTableLocation" placeholder="e.g., Near Pool, VIP Section">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Shape</label>
+                        <select id="newTableShape">
+                            <option value="round">Round</option>
+                            <option value="square">Square</option>
+                            <option value="rectangle">Rectangle</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="newTableStatus">
+                            <option value="available">Available</option>
+                            <option value="maintenance">Maintenance</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;"><i class="fas fa-plus"></i> Add Table</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Table Details Modal -->
+    <div class="modal" id="tableDetailsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTableName">Table Details</h2>
+                <button class="modal-close" onclick="closeModal('tableDetailsModal')">&times;</button>
+            </div>
+            <div id="modalTableContent"></div>
+        </div>
+    </div>
+    
+    <script>
+        const csrfToken = '{{ csrf_token }}';
+        
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            event.target.closest('.tab').classList.add('active');
+        }
+        
+        function openAddTableModal() {
+            document.getElementById('addTableModal').classList.add('active');
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+        
+        async function addTable(e) {
+            e.preventDefault();
+            const data = {
+                table_number: document.getElementById('newTableNumber').value,
+                capacity: parseInt(document.getElementById('newTableCapacity').value),
+                location: document.getElementById('newTableLocation').value,
+                table_shape: document.getElementById('newTableShape').value,
+                pos_x: Math.random() * 600 + 50,
+                pos_y: Math.random() * 400 + 50,
+            };
+            
+            const response = await fetch('/dashboard/api/add-table/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify(data),
+            });
+            
+            if (response.ok) {
+                location.reload();
+            }
+        }
+        
+        async function assignWaiter(tableId, waiterId) {
+            await fetch('/dashboard/api/assign-waiter/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify({table_id: tableId, waiter_id: waiterId}),
+            });
+        }
+        
+        // Drag and drop for floor plan
+        let draggedTable = null;
+        
+        function dragStart(e, tableId) {
+            draggedTable = tableId;
+            e.dataTransfer.effectAllowed = 'move';
+        }
+        
+        document.getElementById('floorPlan').addEventListener('dragover', function(e) {
+            e.preventDefault();
+        });
+        
+        document.getElementById('floorPlan').addEventListener('drop', async function(e) {
+            e.preventDefault();
+            if (!draggedTable) return;
+            
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left - 30;
+            const y = e.clientY - rect.top - 30;
+            
+            const tableEl = document.getElementById('table-' + draggedTable);
+            tableEl.style.left = x + 'px';
+            tableEl.style.top = y + 'px';
+            
+            await fetch('/dashboard/api/update-table-position/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify({table_id: draggedTable, pos_x: Math.round(x), pos_y: Math.round(y)}),
+            });
+            
+            draggedTable = null;
+        });
+        
+        function showTableDetails(tableId) {
+            // Find table data from Django context
+            const tablesData = [
+                {% for table in tables %}
+                {
+                    id: {{ table.id }},
+                    table_number: '{{ table.table_number }}',
+                    status: '{{ table.status }}',
+                    capacity: {{ table.capacity }},
+                    location: '{{ table.location|default:"" }}',
+                    table_shape: '{{ table.table_shape }}',
+                    qr_token: '{{ table.qr_token }}',
+                    assigned_waiter: {{ table.assigned_waiter_id|default:"null" }},
+                },
+                {% endfor %}
+            ];
+            const table = tablesData.find(t => t.id === tableId);
+            if (!table) return;
+            
+            document.getElementById('modalTableName').textContent = 'Table ' + table.table_number;
+            document.getElementById('modalTableContent').innerHTML = `
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="detailStatus">
+                        <option value="available" ${table.status === 'available' ? 'selected' : ''}>Available</option>
+                        <option value="occupied" ${table.status === 'occupied' ? 'selected' : ''}>Occupied</option>
+                        <option value="reserved" ${table.status === 'reserved' ? 'selected' : ''}>Reserved</option>
+                        <option value="maintenance" ${table.status === 'maintenance' ? 'selected' : ''}>Maintenance</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" style="width:100%;" onclick="updateTableStatus(${table.id})">Update Status</button>
+            `;
+            document.getElementById('tableDetailsModal').classList.add('active');
+        }
+        
+        async function updateTableStatus(tableId) {
+            const status = document.getElementById('detailStatus').value;
+            await fetch('/dashboard/api/update-table-status/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify({table_id: tableId, status: status}),
+            });
+            location.reload();
+        }
+    </script>
+</body>
+</html>

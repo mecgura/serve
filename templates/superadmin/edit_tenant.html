@@ -1,0 +1,308 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Resort - {{ tenant.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #1a1a2e; color: #fff; }
+        .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .header h1 { font-size: 1.8rem; }
+        .back-btn { color: #888; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
+        .form-card { background: #16213e; border-radius: 12px; padding: 2rem; }
+        .form-section { margin-bottom: 2rem; }
+        .form-section h3 { color: #e94560; margin-bottom: 1rem; font-size: 1rem; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; color: #888; font-weight: 500; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 0.75rem; background: #0f3460; border: 2px solid transparent;
+            border-radius: 8px; color: #fff; font-size: 0.95rem;
+        }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #e94560; }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+        .checkbox-group { display: flex; align-items: center; gap: 0.5rem; }
+        .checkbox-group input { width: auto; }
+        .submit-btn { width: 100%; padding: 1rem; background: #e94560; color: #fff; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; cursor: pointer; }
+        .success { background: rgba(76,175,80,0.1); color: #4CAF50; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; }
+        
+        /* Theme Selector */
+        .preset-themes {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .theme-btn {
+            height: 50px;
+            border: 3px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .theme-btn:hover {
+            transform: scale(1.05);
+            border-color: #fff;
+        }
+        .theme-btn span {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-size: 0.65rem;
+            padding: 2px;
+            text-align: center;
+        }
+        .theme-btn.active {
+            border-color: #e94560;
+            box-shadow: 0 0 10px rgba(233,69,96,0.5);
+        }
+        
+        /* Color Preview */
+        .color-preview {
+            margin-top: 1rem;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .preview-header {
+            padding: 1rem;
+            color: white;
+            font-weight: 600;
+            text-align: center;
+            transition: background 0.3s;
+        }
+        .preview-btn {
+            padding: 0.75rem;
+            color: white;
+            text-align: center;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Edit: {{ tenant.name }}</h1>
+            <a href="{% url 'manage_tenants' %}" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+        </header>
+        
+        <div class="form-card">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                {% if messages %}
+                {% for message in messages %}
+                <div class="success">{{ message }}</div>
+                {% endfor %}
+                {% endif %}
+                
+                <div class="form-section">
+                    <h3>Basic Information</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Resort Name</label>
+                            <input type="text" name="name" value="{{ tenant.name }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Slug (URL)</label>
+                            <input type="text" value="{{ tenant.slug }}" disabled>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" name="phone" value="{{ tenant.phone }}">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" name="email" value="{{ tenant.email }}">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Address</label>
+                        <textarea name="address">{{ tenant.address }}</textarea>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>Branding & Appearance</h3>
+                    
+                    <!-- Preset Themes -->
+                    <div class="form-group">
+                        <label>Quick Theme (Click to apply)</label>
+                        <div class="preset-themes">
+                            <button type="button" class="theme-btn" onclick="applyTheme('#FF6B35', '#004E89')" style="background: linear-gradient(135deg, #FF6B35, #004E89);">
+                                <span>Sunset Orange</span>
+                            </button>
+                            <button type="button" class="theme-btn" onclick="applyTheme('#E91E63', '#9C27B0')" style="background: linear-gradient(135deg, #E91E63, #9C27B0);">
+                                <span>Rose Pink</span>
+                            </button>
+                            <button type="button" class="theme-btn" onclick="applyTheme('#4CAF50', '#2E7D32')" style="background: linear-gradient(135deg, #4CAF50, #2E7D32);">
+                                <span>Fresh Green</span>
+                            </button>
+                            <button type="button" class="theme-btn" onclick="applyTheme('#1E88E5', '#1565C0')" style="background: linear-gradient(135deg, #1E88E5, #1565C0);">
+                                <span>Ocean Blue</span>
+                            </button>
+                            <button type="button" class="theme-btn" onclick="applyTheme('#FF9800', '#F57C00')" style="background: linear-gradient(135deg, #FF9800, #F57C00);">
+                                <span>Golden Sun</span>
+                            </button>
+                            <button type="button" class="theme-btn" onclick="applyTheme('#795548', '#4E342E')" style="background: linear-gradient(135deg, #795548, #4E342E);">
+                                <span>Coffee Brown</span>
+                            </button>
+                            <button type="button" class="theme-btn" onclick="applyTheme('#673AB7', '#311B92')" style="background: linear-gradient(135deg, #673AB7, #311B92);">
+                                <span>Royal Purple</span>
+                            </button>
+                            <button type="button" class="theme-btn" onclick="applyTheme('#F44336', '#C62828')" style="background: linear-gradient(135deg, #F44336, #C62828);">
+                                <span>Fire Red</span>
+                            </button>
+                            <button type="button" class="theme-btn" onclick="applyTheme('#00BCD4', '#00838F')" style="background: linear-gradient(135deg, #00BCD4, #00838F);">
+                                <span>Teal Cyan</span>
+                            </button>
+                            <button type="button" class="theme-btn" onclick="applyTheme('#333333', '#1a1a1a')" style="background: linear-gradient(135deg, #333333, #1a1a1a);">
+                                <span>Dark Elite</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Primary Color</label>
+                            <input type="color" name="primary_color" id="primary_color" value="{{ tenant.primary_color }}" style="height: 45px;">
+                        </div>
+                        <div class="form-group">
+                            <label>Secondary Color</label>
+                            <input type="color" name="secondary_color" id="secondary_color" value="{{ tenant.secondary_color }}" style="height: 45px;">
+                        </div>
+                    </div>
+                    
+                    <!-- Color Preview -->
+                    <div class="color-preview" id="colorPreview">
+                        <div class="preview-header" id="previewHeader">
+                            <span>Preview Header</span>
+                        </div>
+                        <div class="preview-btn" id="previewBtn">Sample Button</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Logo Image</label>
+                        <input type="file" name="logo" accept="image/*">
+                        {% if tenant.logo %}
+                        <small>Current: {{ tenant.logo.url }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label>Background Image (Menu Page)</label>
+                        <input type="file" name="background_image" accept="image/*">
+                        {% if tenant.background_image %}
+                        <small>Current: {{ tenant.background_image.url }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label>Banner Image (Top of Menu)</label>
+                        <input type="file" name="banner_image" accept="image/*">
+                        {% if tenant.banner_image %}
+                        <small>Current: {{ tenant.banner_image.url }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label>Welcome Message</label>
+                        <input type="text" name="welcome_message" value="{{ tenant.welcome_message }}" placeholder="Welcome! Scan menu and order.">
+                    </div>
+                    <div class="form-group">
+                        <label>Footer Text</label>
+                        <input type="text" name="footer_text" value="{{ tenant.footer_text }}" placeholder="Thank you for dining with us!">
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>Subscription</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Plan</label>
+                            <select name="plan">
+                                <option value="trial" {% if tenant.plan == 'trial' %}selected{% endif %}>Trial</option>
+                                <option value="basic" {% if tenant.plan == 'basic' %}selected{% endif %}>Basic</option>
+                                <option value="premium" {% if tenant.plan == 'premium' %}selected{% endif %}>Premium</option>
+                                <option value="enterprise" {% if tenant.plan == 'enterprise' %}selected{% endif %}>Enterprise</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <div class="checkbox-group">
+                                <input type="checkbox" name="is_active" id="is_active" {% if tenant.is_active %}checked{% endif %}>
+                                <label for="is_active">Active</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>Razorpay Credentials</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Key ID</label>
+                            <input type="text" name="razorpay_key_id" value="{{ tenant.razorpay_key_id }}">
+                        </div>
+                        <div class="form-group">
+                            <label>Key Secret</label>
+                            <input type="password" name="razorpay_key_secret" value="{{ tenant.razorpay_key_secret }}">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>WhatsApp API</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>API Token</label>
+                            <input type="password" name="whatsapp_api_token" value="{{ tenant.whatsapp_api_token }}">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number ID</label>
+                            <input type="text" name="whatsapp_phone_number_id" value="{{ tenant.whatsapp_phone_number_id }}">
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        function applyTheme(primary, secondary) {
+            document.getElementById('primary_color').value = primary;
+            document.getElementById('secondary_color').value = secondary;
+            updatePreview();
+            
+            // Highlight selected theme
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.closest('.theme-btn').classList.add('active');
+        }
+        
+        function updatePreview() {
+            const primary = document.getElementById('primary_color').value;
+            const secondary = document.getElementById('secondary_color').value;
+            document.getElementById('previewHeader').style.background = primary;
+            document.getElementById('previewBtn').style.background = secondary;
+        }
+        
+        // Update preview on color change
+        document.getElementById('primary_color').addEventListener('input', updatePreview);
+        document.getElementById('secondary_color').addEventListener('input', updatePreview);
+        
+        // Initial preview
+        updatePreview();
+    </script>
+</body>
+</html>

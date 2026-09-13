@@ -1,0 +1,309 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MecGuraServe - Smart Resort Ordering Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; min-height: 100vh; display: flex; align-items: center;
+            position: relative; overflow: hidden;
+        }
+        .hero::before {
+            content: ''; position: absolute; top: -50%; right: -50%;
+            width: 100%; height: 200%; background: rgba(255,255,255,0.05);
+            transform: rotate(45deg);
+        }
+        .hero-content { max-width: 1200px; margin: 0 auto; padding: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+        .hero-text h1 { font-size: 3.5rem; font-weight: 800; line-height: 1.1; margin-bottom: 1.5rem; }
+        .hero-text p { font-size: 1.2rem; opacity: 0.9; margin-bottom: 2rem; line-height: 1.6; }
+        .hero-buttons { display: flex; gap: 1rem; }
+        .btn { padding: 15px 30px; border-radius: 10px; font-weight: 600; text-decoration: none; transition: all 0.3s; display: inline-flex; align-items: center; gap: 10px; }
+        .btn-white { background: white; color: #667eea; }
+        .btn-white:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .btn-outline { border: 2px solid white; color: white; background: transparent; }
+        .btn-outline:hover { background: white; color: #667eea; }
+        
+        .hero-phone {
+            position: relative; display: flex; justify-content: center;
+        }
+        .phone-mockup {
+            width: 300px; height: 600px; background: #1a1a2e; border-radius: 40px;
+            padding: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+            position: relative; overflow: hidden;
+        }
+        .phone-screen {
+            width: 100%; height: 100%; background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 30px; overflow: hidden;
+        }
+        .phone-header { background: #667eea; color: white; padding: 20px; text-align: center; }
+        .phone-menu { padding: 15px; }
+        .menu-item-demo { background: white; border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; gap: 15px; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .menu-item-demo img { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; background: #ddd; }
+        
+        /* Features Section */
+        .features { padding: 100px 2rem; background: #f8f9fa; }
+        .section-title { text-align: center; margin-bottom: 4rem; }
+        .section-title h2 { font-size: 2.5rem; font-weight: 700; color: #333; margin-bottom: 1rem; }
+        .section-title p { color: #666; font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+        
+        .features-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+        .feature-card {
+            background: white; border-radius: 16px; padding: 2rem;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05); transition: all 0.3s;
+        }
+        .feature-card:hover { transform: translateY(-10px); box-shadow: 0 15px 40px rgba(0,0,0,0.1); }
+        .feature-icon {
+            width: 70px; height: 70px; border-radius: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem; color: white; margin-bottom: 1.5rem;
+        }
+        .feature-card h3 { font-size: 1.3rem; color: #333; margin-bottom: 0.75rem; }
+        .feature-card p { color: #666; line-height: 1.6; }
+        
+        /* Pricing Section */
+        .pricing { padding: 100px 2rem; background: white; }
+        .pricing-grid { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+        .price-card {
+            background: white; border-radius: 20px; padding: 2.5rem;
+            border: 2px solid #e9ecef; text-align: center; position: relative;
+            transition: all 0.3s;
+        }
+        .price-card:hover { border-color: #667eea; }
+        .price-card.popular {
+            border-color: #667eea; transform: scale(1.05);
+            box-shadow: 0 20px 50px rgba(102,126,234,0.2);
+        }
+        .popular-badge {
+            position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 8px 25px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+        }
+        .price-card h3 { font-size: 1.5rem; color: #333; margin-bottom: 1rem; }
+        .price-amount { font-size: 3rem; font-weight: 800; color: #667eea; margin-bottom: 0.5rem; }
+        .price-period { color: #666; margin-bottom: 2rem; }
+        .price-features { list-style: none; text-align: left; margin-bottom: 2rem; }
+        .price-features li { padding: 10px 0; border-bottom: 1px solid #f0f0f0; color: #555; }
+        .price-features li::before { content: '✓'; color: #10b981; font-weight: bold; margin-right: 10px; }
+        
+        /* Demo CTA */
+        .demo-cta {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 80px 2rem; text-align: center;
+        }
+        .demo-cta h2 { font-size: 2.5rem; margin-bottom: 1rem; }
+        .demo-cta p { font-size: 1.2rem; opacity: 0.9; margin-bottom: 2rem; }
+        
+        /* Footer */
+        footer { background: #1a1a2e; color: white; padding: 60px 2rem 30px; }
+        .footer-content { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem; }
+        .footer-brand h3 { font-size: 1.5rem; margin-bottom: 1rem; }
+        .footer-brand p { opacity: 0.7; line-height: 1.6; }
+        .footer-links h4 { margin-bottom: 1rem; }
+        .footer-links a { display: block; color: white; opacity: 0.7; text-decoration: none; padding: 5px 0; }
+        .footer-links a:hover { opacity: 1; }
+        
+        @media (max-width: 768px) {
+            .hero-content { grid-template-columns: 1fr; text-align: center; }
+            .hero-buttons { justify-content: center; }
+            .features-grid { grid-template-columns: 1fr; }
+            .pricing-grid { grid-template-columns: 1fr; }
+            .footer-content { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Smart Resort Ordering Platform</h1>
+                <p>Transform your resort with QR-based digital ordering, real-time kitchen display, AI-powered insights, and seamless payment integration. Serve more guests, earn more revenue.</p>
+                <div class="hero-buttons">
+                    <a href="/superadmin/tenants/add/" class="btn btn-white">
+                        <i class="fas fa-rocket"></i> Start Free Trial
+                    </a>
+                    <a href="#demo" class="btn btn-outline">
+                        <i class="fas fa-play-circle"></i> Watch Demo
+                    </a>
+                </div>
+            </div>
+            <div class="hero-phone">
+                <div class="phone-mockup">
+                    <div class="phone-screen">
+                        <div class="phone-header">
+                            <h4>Grand Resort</h4>
+                            <p>Scan. Order. Enjoy!</p>
+                        </div>
+                        <div class="phone-menu">
+                            <div class="menu-item-demo">
+                                <div style="width:60px;height:60px;background:#ff6b35;border-radius:10px;"></div>
+                                <div>
+                                    <strong>Butter Chicken</strong>
+                                    <p style="color:#10b981;font-size:0.9rem;">₹350</p>
+                                </div>
+                            </div>
+                            <div class="menu-item-demo">
+                                <div style="width:60px;height:60px;background:#4ade80;border-radius:10px;"></div>
+                                <div>
+                                    <strong>Paneer Tikka</strong>
+                                    <p style="color:#10b981;font-size:0.9rem;">₹280</p>
+                                </div>
+                            </div>
+                            <div class="menu-item-demo">
+                                <div style="width:60px;height:60px;background:#60a5fa;border-radius:10px;"></div>
+                                <div>
+                                    <strong>Garlic Naan</strong>
+                                    <p style="color:#10b981;font-size:0.9rem;">₹60</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Features -->
+    <section class="features">
+        <div class="section-title">
+            <h2>Everything Your Resort Needs</h2>
+            <p>29+ powerful features to automate operations, increase revenue, and delight guests</p>
+        </div>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+                <h3>QR Menu Ordering</h3>
+                <p>Guests scan QR code, browse menu, order directly from phone. No waiting for waiter.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-brain"></i></div>
+                <h3>AI Voice Ordering</h3>
+                <p>Customers call and order in Hindi/English/Punjabi. AI takes order automatically 24/7.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-desktop"></i></div>
+                <h3>Kitchen Display System</h3>
+                <p>Real-time orders on kitchen screen. Sound alerts. No paper KOTs. Faster service.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-credit-card"></i></div>
+                <h3>Instant Payments</h3>
+                <p>UPI, cards, wallets. Split bill. Auto receipt. Digital tipping for staff.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fab fa-whatsapp"></i></div>
+                <h3>WhatsApp Integration</h3>
+                <p>Order confirmations, payment reminders, marketing campaigns via WhatsApp.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                <h3>AI Revenue Optimizer</h3>
+                <p>Dynamic pricing based on demand, time, weather. Increase revenue by 25%.</p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Pricing -->
+    <section class="pricing">
+        <div class="section-title">
+            <h2>Simple, Transparent Pricing</h2>
+            <p>Start free, upgrade as you grow. No hidden fees.</p>
+        </div>
+        
+        <div class="pricing-grid">
+            <div class="price-card">
+                <h3>Trial</h3>
+                <div class="price-amount">₹0</div>
+                <div class="price-period">14 days free</div>
+                <ul class="price-features">
+                    <li>Up to 50 orders/day</li>
+                    <li>5 tables</li>
+                    <li>Basic menu management</li>
+                    <li>Kitchen display</li>
+                    <li>Email support</li>
+                </ul>
+                <a href="/superadmin/tenants/add/" class="btn btn-outline" style="width:100%;justify-content:center;">Start Free</a>
+            </div>
+            
+            <div class="price-card popular">
+                <span class="popular-badge">Most Popular</span>
+                <h3>Basic</h3>
+                <div class="price-amount">₹999</div>
+                <div class="price-period">per month</div>
+                <ul class="price-features">
+                    <li>Unlimited orders</li>
+                    <li>20 tables</li>
+                    <li>Staff management</li>
+                    <li>Payment integration</li>
+                    <li>WhatsApp alerts</li>
+                    <li>Priority support</li>
+                </ul>
+                <a href="/superadmin/tenants/add/" class="btn btn-white" style="width:100%;justify-content:center;">Get Started</a>
+            </div>
+            
+            <div class="price-card">
+                <h3>Premium</h3>
+                <div class="price-amount">₹2,499</div>
+                <div class="price-period">per month</div>
+                <ul class="price-features">
+                    <li>Everything in Basic</li>
+                    <li>Unlimited tables</li>
+                    <li>AI features</li>
+                    <li>Multi-language</li>
+                    <li>Custom branding</li>
+                    <li>24/7 support</li>
+                </ul>
+                <a href="/superadmin/tenants/add/" class="btn btn-outline" style="width:100%;justify-content:center;">Contact Sales</a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Demo CTA -->
+    <section class="demo-cta">
+        <h2>Ready to Transform Your Resort?</h2>
+        <p>Join 100+ resorts already using MecGuraServe. Start your free trial today.</p>
+        <a href="/superadmin/tenants/add/" class="btn btn-white">
+            <i class="fas fa-rocket"></i> Start Free Trial
+        </a>
+    </section>
+    
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-brand">
+                <h3>MecGuraServe</h3>
+                <p>Smart ordering platform for resorts and restaurants. Scan. Order. Serve.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Product</h4>
+                <a href="#">Features</a>
+                <a href="#">Pricing</a>
+                <a href="#">Demo</a>
+            </div>
+            <div class="footer-links">
+                <h4>Support</h4>
+                <a href="#">Documentation</a>
+                <a href="#">Contact</a>
+                <a href="#">FAQ</a>
+            </div>
+            <div class="footer-links">
+                <h4>Company</h4>
+                <a href="#">About</a>
+                <a href="#">Blog</a>
+                <a href="#">Careers</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

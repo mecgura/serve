@@ -1,0 +1,237 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservations - {{ tenant.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #333; }
+        .header { background: linear-gradient(135deg, {{ tenant.primary_color }}, {{ tenant.secondary_color }}); color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 1.4rem; }
+        .back-btn { color: white; text-decoration: none; }
+        .container { padding: 1.5rem; max-width: 1200px; margin: 0 auto; }
+        .card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1.5rem; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #f0f0f0; }
+        .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 0.3rem; }
+        .btn-primary { background: {{ tenant.primary_color }}; color: white; }
+        .btn-success { background: #4CAF50; color: white; }
+        .btn-danger { background: #f44336; color: white; }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        th { color: #666; font-weight: 500; font-size: 0.85rem; text-transform: uppercase; }
+        .status-badge { padding: 0.2rem 0.6rem; border-radius: 15px; font-size: 0.75rem; font-weight: 600; }
+        .status-pending { background: #FFF3E0; color: #EF6C00; }
+        .status-confirmed { background: #E8F5E9; color: #388E3C; }
+        .status-cancelled { background: #FFEBEE; color: #C62828; }
+        .status-completed { background: #E3F2FD; color: #1565C0; }
+        .advance-paid { background: #E8F5E9; color: #388E3C; }
+        .advance-pending { background: #FFF3E0; color: #EF6C00; }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; border-radius: 12px; padding: 2rem; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.9rem; }
+        .form-group input, .form-group select { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .checkbox-group { display: flex; align-items: center; gap: 0.5rem; }
+        .checkbox-group input { width: auto; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1><i class="fas fa-calendar-check"></i> Reservations</h1>
+        <a href="{% url 'owner_dashboard' %}?tenant={{ tenant.slug }}" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+    </header>
+    
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h2>All Reservations</h2>
+                <button class="btn btn-primary" onclick="document.getElementById('addModal').classList.add('active')">
+                    <i class="fas fa-plus"></i> New Reservation
+                </button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Customer</th>
+                        <th>Table</th>
+                        <th>Date & Time</th>
+                        <th>Party</th>
+                        <th>Advance</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for res in reservations %}
+                    <tr>
+                        <td>
+                            <strong>{{ res.customer_name }}</strong><br>
+                            <small style="color: #666;">{{ res.customer_phone }}</small>
+                        </td>
+                        <td>Table {{ res.table.table_number }}</td>
+                        <td>
+                            {{ res.reservation_date }}<br>
+                            <small>{{ res.start_time|time:"g:i A" }} - {{ res.end_time|time:"g:i A" }}</small>
+                        </td>
+                        <td>{{ res.party_size }} guests</td>
+                        <td>
+                            {% if res.advance_status == 'paid' %}
+                            <span class="advance-paid">₹{{ res.advance_amount }} Paid</span>
+                            {% else %}
+                            <span class="advance-pending">₹{{ res.advance_amount }} Pending</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="status-badge status-{{ res.status }}">{{ res.status }}</span></td>
+                        <td>
+                            {% if res.status != 'cancelled' %}
+                            <button class="btn btn-danger btn-sm" onclick="cancelReservation({{ res.id }})">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" style="text-align: center; padding: 2rem; color: #999;">No reservations found</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Add Reservation Modal -->
+    <div class="modal" id="addModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>New Reservation</h2>
+                <button class="modal-close" onclick="document.getElementById('addModal').classList.remove('active')">&times;</button>
+            </div>
+            <form onsubmit="addReservation(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Customer Name *</label>
+                        <input type="text" id="resName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone *</label>
+                        <input type="tel" id="resPhone" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="resEmail">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Table *</label>
+                        <select id="resTable" required>
+                            {% for table in tables %}
+                            {% if table.status == 'available' %}
+                            <option value="{{ table.id }}">Table {{ table.table_number }} ({{ table.capacity }} seats)</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Party Size *</label>
+                        <input type="number" id="resParty" value="2" min="1" max="20" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Date *</label>
+                        <input type="date" id="resDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Advance Amount</label>
+                        <input type="number" id="resAdvance" value="{{ tenant.reservation_advance }}" min="0">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Time *</label>
+                        <input type="time" id="resStart" required>
+                    </div>
+                    <div class="form-group">
+                        <label>End Time *</label>
+                        <input type="time" id="resEnd" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Payment Method</label>
+                    <select id="resPayMethod">
+                        <option value="cash">Cash</option>
+                        <option value="upi">UPI</option>
+                        <option value="card">Card</option>
+                        <option value="razorpay">Online</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="resAdvancePaid">
+                        <label for="resAdvancePaid">Advance Paid</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Special Requests</label>
+                    <input type="text" id="resNotes" placeholder="e.g., Birthday celebration, Window seat">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;"><i class="fas fa-check"></i> Confirm Reservation</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        const csrfToken = '{{ csrf_token }}';
+        
+        async function addReservation(e) {
+            e.preventDefault();
+            const data = {
+                customer_name: document.getElementById('resName').value,
+                customer_phone: document.getElementById('resPhone').value,
+                customer_email: document.getElementById('resEmail').value,
+                table_id: document.getElementById('resTable').value,
+                party_size: document.getElementById('resParty').value,
+                reservation_date: document.getElementById('resDate').value,
+                start_time: document.getElementById('resStart').value,
+                end_time: document.getElementById('resEnd').value,
+                advance_amount: document.getElementById('resAdvance').value,
+                advance_payment_method: document.getElementById('resPayMethod').value,
+                advance_paid: document.getElementById('resAdvancePaid').checked,
+                special_requests: document.getElementById('resNotes').value,
+            };
+            
+            const response = await fetch('/dashboard/api/add-reservation/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify(data),
+            });
+            
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Error adding reservation');
+            }
+        }
+        
+        async function cancelReservation(resId) {
+            if (!confirm('Cancel this reservation?')) return;
+            
+            await fetch('/dashboard/api/cancel-reservation/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify({reservation_id: resId}),
+            });
+            location.reload();
+        }
+    </script>
+</body>
+</html>

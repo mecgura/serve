@@ -1,0 +1,101 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}Create Campaign - {{ tenant.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-bullhorn"></i> Create WhatsApp Campaign</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="form-group">
+                            <label>Campaign Name *</label>
+                            <input type="text" name="name" class="form-control" required placeholder="e.g., Weekend Special Offer">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Campaign Type *</label>
+                            <select name="campaign_type" class="form-control" required>
+                                <option value="promo">Promotion</option>
+                                <option value="event">Event</option>
+                                <option value="feedback">Feedback Request</option>
+                                <option value="loyalty">Loyalty Reward</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Message *</label>
+                            <textarea name="message" class="form-control" rows="6" required placeholder="Enter your campaign message..."></textarea>
+                            <small class="text-muted">
+                                Tips: Use emojis to make messages engaging. Keep it short and clear.
+                            </small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Send To:</label>
+                            <div class="form-check">
+                                <input type="checkbox" name="send_to_all" class="form-check-input" checked>
+                                <label class="form-check-label">All Customers</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" name="send_to_inactive" class="form-check-input">
+                                <label class="form-check-label">Inactive Customers (not ordered in 30 days)</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" name="send_to_vip" class="form-check-input">
+                                <label class="form-check-label">VIP Customers (ordered 5+ times)</label>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-paper-plane"></i> Create Campaign
+                        </button>
+                        <a href="/dashboard/whatsapp/campaigns/?tenant={{ tenant.slug }}" class="btn btn-secondary">
+                            Cancel
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Campaign Tips</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i>
+                            Keep messages short (under 500 chars)
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i>
+                            Use emojis to grab attention
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i>
+                            Include a clear call-to-action
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i>
+                            Send at the right time (11am-1pm, 6pm-8pm)
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i>
+                            Avoid sending too frequently
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

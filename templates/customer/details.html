@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Your Details{% endblock %}
+
+{% block content %}
+<div class="details-page">
+    <div class="details-card">
+        <div class="card-header">
+            <h1>Welcome!</h1>
+            <p>Table {{ table_number }}</p>
+        </div>
+        
+        <form method="post" class="details-form">
+            {% csrf_token %}
+            
+            {% if error %}
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                {{ error }}
+            </div>
+            {% endif %}
+            
+            <div class="form-group">
+                <label for="name">
+                    <i class="fas fa-user"></i>
+                    Your Name
+                </label>
+                <input type="text" id="name" name="name" placeholder="Enter your name (optional)">
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">
+                    <i class="fas fa-phone"></i>
+                    Phone Number *
+                </label>
+                <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" required>
+                <small>We'll send your bill on WhatsApp</small>
+            </div>
+            
+            <button type="submit" class="submit-btn">
+                <span>Continue to Menu</span>
+                <i class="fas fa-arrow-right"></i>
+            </button>
+            
+            <button type="submit" name="skip" value="true" class="skip-btn">
+                Skip as Guest
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

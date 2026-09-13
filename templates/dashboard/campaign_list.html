@@ -1,0 +1,69 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}Campaigns - {{ tenant.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-bullhorn"></i> WhatsApp Campaigns</h4>
+                    <a href="/dashboard/whatsapp/campaigns/create/?tenant={{ tenant.slug }}" class="btn btn-primary float-right">
+                        <i class="fas fa-plus"></i> New Campaign
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Sent</th>
+                                    <th>Delivered</th>
+                                    <th>Read</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for campaign in campaigns %}
+                                <tr>
+                                    <td><strong>{{ campaign.name }}</strong></td>
+                                    <td>
+                                        <span class="badge badge-{% if campaign.campaign_type == 'promo' %}primary{% elif campaign.campaign_type == 'event' %}info{% elif campaign.campaign_type == 'feedback' %}warning{% else %}success{% endif %}">
+                                            {{ campaign.get_campaign_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if campaign.sent_at %}
+                                            <span class="badge badge-success">Sent</span>
+                                        {% elif campaign.scheduled_at %}
+                                            <span class="badge badge-warning">Scheduled</span>
+                                        {% else %}
+                                            <span class="badge badge-secondary">Draft</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ campaign.total_sent }}</td>
+                                    <td>{{ campaign.total_delivered }}</td>
+                                    <td>{{ campaign.total_read }}</td>
+                                    <td>{{ campaign.created_at|date:"M d, Y" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center">
+                                        No campaigns yet. Create your first campaign!
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

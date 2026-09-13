@@ -1,0 +1,216 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ staff.get_role_display }} Panel - {{ tenant.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; }
+        
+        .header {
+            background: linear-gradient(135deg, {{ tenant.primary_color }}, {{ tenant.secondary_color }});
+            color: white; padding: 1rem 1.5rem;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .staff-info { display: flex; align-items: center; gap: 1rem; }
+        .staff-photo { width: 45px; height: 45px; border-radius: 50%; border: 2px solid white; object-fit: cover; }
+        .staff-photo-placeholder { width: 45px; height: 45px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; }
+        .staff-name { font-weight: 600; }
+        .staff-role { font-size: 0.8rem; opacity: 0.9; }
+        
+        .container { padding: 1rem; max-width: 800px; margin: 0 auto; }
+        
+        .stats-bar {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem;
+        }
+        .stat-item {
+            background: white; border-radius: 12px; padding: 1rem; text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: {{ tenant.primary_color }}; }
+        .stat-label { font-size: 0.8rem; color: #666; }
+        
+        .section-title {
+            font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        
+        .order-card {
+            background: white; border-radius: 12px; padding: 1.25rem;
+            margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-left: 4px solid {% if order.status == 'pending' %}#FF9800{% elif order.status == 'preparing' %}#9C27B0{% else %}#4CAF50{% endif %};
+        }
+        .order-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem; }
+        .order-number { font-weight: 700; font-size: 1.1rem; }
+        .order-table { background: {{ tenant.primary_color }}10; color: {{ tenant.primary_color }}; padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.85rem; font-weight: 600; }
+        .order-time { font-size: 0.8rem; color: #666; }
+        .order-customer { font-size: 0.9rem; color: #333; margin-bottom: 0.5rem; }
+        .order-items { font-size: 0.9rem; color: #666; margin-bottom: 0.75rem; }
+        .order-items strong { color: #333; }
+        
+        .order-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .btn {
+            padding: 0.6rem 1.2rem; border: none; border-radius: 8px;
+            cursor: pointer; font-weight: 500; display: inline-flex;
+            align-items: center; gap: 0.3rem; font-size: 0.9rem;
+        }
+        .btn-primary { background: {{ tenant.primary_color }}; color: white; }
+        .btn-success { background: #4CAF50; color: white; }
+        .btn-warning { background: #FF9800; color: white; }
+        .btn-danger { background: #f44336; color: white; }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+        
+        .status-badge {
+            padding: 0.2rem 0.6rem; border-radius: 15px;
+            font-size: 0.75rem; font-weight: 600;
+        }
+        .status-pending { background: #FFF3E0; color: #EF6C00; }
+        .status-confirmed { background: #E3F2FD; color: #1565C0; }
+        .status-preparing { background: #F3E5F5; color: #7B1FA2; }
+        .status-ready { background: #E8F5E9; color: #388E3C; }
+        
+        .empty-state {
+            text-align: center; padding: 3rem; color: #999;
+            background: white; border-radius: 12px;
+        }
+        .empty-state i { font-size: 3rem; margin-bottom: 1rem; display: block; }
+        
+        .logout-btn {
+            background: rgba(255,255,255,0.2); color: white; border: none;
+            padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="staff-info">
+            {% if staff.photo %}
+            <img src="{{ staff.photo.url }}" class="staff-photo">
+            {% else %}
+            <div class="staff-photo-placeholder"><i class="fas fa-user"></i></div>
+            {% endif %}
+            <div>
+                <div class="staff-name">{{ staff.full_name }}</div>
+                <div class="staff-role">{{ staff.get_role_display }}</div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <div id="currentTime" style="font-size: 1.1rem; font-weight: 600;"></div>
+            <button class="logout-btn" onclick="window.location.href='{% url 'staff_logout' %}'">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value">{{ assigned_orders.count }}</div>
+                <div class="stat-label">My Orders</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ pending_count }}</div>
+                <div class="stat-label">Pending</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ completed_count }}</div>
+                <div class="stat-label">Completed Today</div>
+            </div>
+        </div>
+        
+        <div class="section-title">
+            <i class="fas fa-clipboard-list"></i> My Assigned Orders
+        </div>
+        
+        {% for order in assigned_orders %}
+        <div class="order-card" id="order-{{ order.id }}">
+            <div class="order-header">
+                <div>
+                    <div class="order-number">#{{ order.order_number }}</div>
+                    <div class="order-time">{{ order.created_at|time:"H:i" }}</div>
+                </div>
+                <span class="order-table">Table {{ order.table.table_number }}</span>
+            </div>
+            
+            {% if order.customer %}
+            <div class="order-customer">
+                <i class="fas fa-user"></i> {{ order.customer.name }}
+                {% if order.customer.phone %} • {{ order.customer.phone }}{% endif %}
+            </div>
+            {% endif %}
+            
+            <div class="order-items">
+                <strong>Items:</strong>
+                {% for item in order.items.all %}
+                {{ item.quantity }}x {{ item.menu_item.name }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </div>
+            
+            <div class="order-actions">
+                <span class="status-badge status-{{ order.status }}">{{ order.status|title }}</span>
+                
+                {% if order.status == 'pending' %}
+                <button class="btn btn-sm btn-success" onclick="updateStatus({{ order.id }}, 'confirmed')">
+                    <i class="fas fa-check"></i> Accept
+                </button>
+                {% endif %}
+                
+                {% if order.status == 'confirmed' %}
+                <button class="btn btn-sm btn-warning" onclick="updateStatus({{ order.id }}, 'preparing')">
+                    <i class="fas fa-fire"></i> Start Prep
+                </button>
+                {% endif %}
+                
+                {% if order.status == 'preparing' %}
+                <button class="btn btn-sm btn-success" onclick="updateStatus({{ order.id }}, 'ready')">
+                    <i class="fas fa-bell"></i> Ready
+                </button>
+                {% endif %}
+                
+                {% if order.status == 'ready' %}
+                <button class="btn btn-sm btn-primary" onclick="updateStatus({{ order.id }}, 'served')">
+                    <i class="fas fa-utensils"></i> Served
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h3>No Orders Assigned</h3>
+            <p>Orders will appear here when customers place them at your assigned tables.</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <script>
+        // Update clock
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'});
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+        
+        // Update order status
+        async function updateStatus(orderId, status) {
+            const response = await fetch('/dashboard/api/update-status/?tenant={{ tenant.slug }}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                body: JSON.stringify({order_id: orderId, status: status}),
+            });
+            
+            if (response.ok) {
+                location.reload();
+            }
+        }
+        
+        // Auto-refresh every 30 seconds
+        setInterval(() => location.reload(), 30000);
+    </script>
+</body>
+</html>

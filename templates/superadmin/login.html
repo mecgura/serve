@@ -1,0 +1,55 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperAdmin Login - MecGuraServe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #1a1a2e; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .login-card { background: #16213e; padding: 2.5rem; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+        .logo { text-align: center; margin-bottom: 2rem; }
+        .logo h1 { color: #e94560; font-size: 1.8rem; }
+        .logo p { color: #888; font-size: 0.9rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; color: #fff; margin-bottom: 0.5rem; font-weight: 500; }
+        .form-group input { width: 100%; padding: 0.9rem; background: #0f3460; border: 2px solid transparent; border-radius: 8px; color: #fff; font-size: 1rem; }
+        .form-group input:focus { outline: none; border-color: #e94560; }
+        .login-btn { width: 100%; padding: 1rem; background: #e94560; color: #fff; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; cursor: pointer; }
+        .login-btn:hover { background: #d63851; }
+        .error { background: rgba(244,67,54,0.1); color: #f44336; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; text-align: center; }
+        .brand { text-align: center; margin-top: 1.5rem; color: #666; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="logo">
+            <h1>MecGuraServe</h1>
+            <p>SuperAdmin Panel</p>
+        </div>
+        
+        {% if messages %}
+        {% for message in messages %}
+        <div class="error">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" name="username" required autofocus>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" required>
+            </div>
+            <button type="submit" class="login-btn">Login</button>
+        </form>
+        
+        <p class="brand">Powered by MecGuraServe</p>
+    </div>
+</body>
+</html>

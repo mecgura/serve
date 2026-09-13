@@ -1,0 +1,100 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}WhatsApp History - {{ tenant.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6>Messages Sent Today</h6>
+                    <h2>{{ stats.total_sent }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6>Delivered</h6>
+                    <h2>{{ stats.delivered }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6>Read</h6>
+                    <h2>{{ stats.read }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h6>Failed</h6>
+                    <h2>{{ stats.failed }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fab fa-whatsapp"></i> Message History</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Phone</th>
+                                    <th>Message</th>
+                                    <th>Status</th>
+                                    <th>Order</th>
+                                    <th>Sent At</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for msg in messages %}
+                                <tr>
+                                    <td>
+                                        <span class="badge badge-{% if msg.message_type == 'bill' %}success{% elif msg.message_type == 'payment_reminder' %}warning{% elif msg.message_type == 'order_confirmation' %}info{% else %}primary{% endif %}">
+                                            {{ msg.get_message_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ msg.phone_number }}</td>
+                                    <td>{{ msg.message_content|truncatewords:10 }}</td>
+                                    <td>
+                                        <span class="badge badge-{% if msg.status == 'sent' %}success{% elif msg.status == 'delivered' %}info{% elif msg.status == 'read' %}primary{% elif msg.status == 'failed' %}danger{% else %}secondary{% endif %}">
+                                            {{ msg.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if msg.order %}
+                                        #{{ msg.order.id }}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ msg.created_at|date:"M d, H:i" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No messages sent yet</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

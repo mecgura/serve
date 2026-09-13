@@ -1,0 +1,146 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Login - {{ tenant.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, {{ tenant.primary_color }} 0%, {{ tenant.secondary_color }} 100%);
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+        }
+        .login-container {
+            background: white; border-radius: 20px; padding: 2.5rem;
+            width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .logo { text-align: center; margin-bottom: 2rem; }
+        .logo img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; }
+        .logo h1 { font-size: 1.5rem; color: #333; margin-top: 1rem; }
+        .logo p { color: #666; font-size: 0.9rem; }
+        
+        .staff-type-selector {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;
+        }
+        .staff-type {
+            border: 2px solid #e0e0e0; border-radius: 12px; padding: 1.25rem;
+            text-align: center; cursor: pointer; transition: all 0.3s;
+        }
+        .staff-type:hover { border-color: {{ tenant.primary_color }}; }
+        .staff-type.active { border-color: {{ tenant.primary_color }}; background: {{ tenant.primary_color }}10; }
+        .staff-type i { font-size: 2rem; margin-bottom: 0.5rem; display: block; }
+        .staff-type span { font-weight: 600; font-size: 0.9rem; }
+        
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #333; }
+        .form-group input {
+            width: 100%; padding: 0.875rem 1rem; border: 2px solid #e0e0e0;
+            border-radius: 10px; font-size: 1rem; transition: border-color 0.3s;
+        }
+        .form-group input:focus { outline: none; border-color: {{ tenant.primary_color }}; }
+        
+        .login-btn {
+            width: 100%; padding: 1rem; background: {{ tenant.primary_color }};
+            color: white; border: none; border-radius: 10px; font-size: 1rem;
+            font-weight: 600; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px {{ tenant.primary_color }}80; }
+        
+        .forgot-link { text-align: center; margin-top: 1rem; }
+        .forgot-link a { color: {{ tenant.primary_color }}; text-decoration: none; font-size: 0.9rem; }
+        
+        .error-msg { background: #FFEBEE; color: #C62828; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; text-align: center; display: none; }
+        
+        .back-link { text-align: center; margin-top: 1.5rem; }
+        .back-link a { color: #666; text-decoration: none; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            {% if tenant.logo %}
+            <img src="{{ tenant.logo.url }}" alt="{{ tenant.name }}">
+            {% else %}
+            <div style="width: 80px; height: 80px; border-radius: 50%; background: {{ tenant.primary_color }}; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 2rem;">
+                <i class="fas fa-utensils"></i>
+            </div>
+            {% endif %}
+            <h1>{{ tenant.name }}</h1>
+            <p>Staff Login</p>
+        </div>
+        
+        <div id="errorMsg" class="error-msg"></div>
+        
+        <div class="staff-type-selector">
+            <div class="staff-type active" onclick="selectType('waiter')" id="typeWaiter">
+                <i class="fas fa-concierge-bell"></i>
+                <span>Waiter</span>
+            </div>
+            <div class="staff-type" onclick="selectType('kitchen')" id="typeKitchen">
+                <i class="fas fa-fire"></i>
+                <span>Kitchen</span>
+            </div>
+        </div>
+        
+        <form onsubmit="staffLogin(event)">
+            <div class="form-group">
+                <label><i class="fas fa-user"></i> Username</label>
+                <input type="text" id="username" required placeholder="Enter your username">
+            </div>
+            
+            <div class="form-group">
+                <label><i class="fas fa-lock"></i> Password</label>
+                <input type="password" id="password" required placeholder="Enter your password">
+            </div>
+            
+            <input type="hidden" id="staffType" value="waiter">
+            
+            <button type="submit" class="login-btn">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </button>
+        </form>
+        
+        <div class="back-link">
+            <a href="{% url 'superadmin_login' %}"><i class="fas fa-arrow-left"></i> Back to Admin Login</a>
+        </div>
+    </div>
+    
+    <script>
+        function selectType(type) {
+            document.querySelectorAll('.staff-type').forEach(el => el.classList.remove('active'));
+            document.getElementById('type' + type.charAt(0).toUpperCase() + type.slice(1)).classList.add('active');
+            document.getElementById('staffType').value = type;
+        }
+        
+        async function staffLogin(e) {
+            e.preventDefault();
+            
+            const data = {
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+                staff_type: document.getElementById('staffType').value,
+            };
+            
+            const response = await fetch('/dashboard/staff-login/?tenant={{ tenant.slug }}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                body: JSON.stringify(data),
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                window.location.href = result.redirect_url;
+            } else {
+                const errorDiv = document.getElementById('errorMsg');
+                errorDiv.textContent = result.error || 'Invalid credentials';
+                errorDiv.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

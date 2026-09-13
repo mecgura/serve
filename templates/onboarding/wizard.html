@@ -1,0 +1,385 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Your Resort - MecGuraServe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; min-height: 100vh; }
+        
+        .onboarding-container { max-width: 800px; margin: 0 auto; padding: 2rem; }
+        
+        .progress-bar {
+            background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .progress-steps { display: flex; justify-content: space-between; position: relative; }
+        .progress-steps::before {
+            content: ''; position: absolute; top: 20px; left: 0; right: 0;
+            height: 3px; background: #e9ecef; z-index: 0;
+        }
+        .progress-line {
+            position: absolute; top: 20px; left: 0; height: 3px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 1; transition: width 0.5s;
+        }
+        .step {
+            display: flex; flex-direction: column; align-items: center;
+            position: relative; z-index: 2;
+        }
+        .step-circle {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: #e9ecef; display: flex; align-items: center; justify-content: center;
+            font-weight: 600; color: #999; margin-bottom: 0.5rem; transition: all 0.3s;
+        }
+        .step.active .step-circle {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .step.completed .step-circle { background: #10b981; color: white; }
+        .step-label { font-size: 0.8rem; color: #666; }
+        
+        .form-card {
+            background: white; border-radius: 16px; padding: 2.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .form-card h2 { font-size: 1.5rem; color: #333; margin-bottom: 0.5rem; }
+        .form-card p { color: #666; margin-bottom: 2rem; }
+        
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; font-weight: 600; color: #333; margin-bottom: 0.5rem; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 14px; border: 2px solid #e9ecef; border-radius: 10px;
+            font-size: 1rem; transition: all 0.3s;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none; border-color: #667eea;
+        }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        
+        .btn {
+            padding: 14px 28px; border-radius: 10px; font-weight: 600;
+            text-decoration: none; transition: all 0.3s; border: none; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102,126,234,0.4); }
+        .btn-secondary { background: #e9ecef; color: #666; }
+        .btn-secondary:hover { background: #dee2e6; }
+        
+        .form-actions { display: flex; justify-content: space-between; margin-top: 2rem; }
+        
+        .color-picker { display: flex; gap: 10px; flex-wrap: wrap; }
+        .color-option {
+            width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+            border: 3px solid transparent; transition: all 0.2s;
+        }
+        .color-option:hover { transform: scale(1.1); }
+        .color-option.selected { border-color: #333; }
+        
+        .success-card {
+            text-align: center; padding: 3rem;
+        }
+        .success-icon {
+            width: 100px; height: 100px; border-radius: 50%;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 2rem; font-size: 3rem; color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="onboarding-container">
+        <!-- Progress Bar -->
+        <div class="progress-bar">
+            <div class="progress-steps">
+                <div class="progress-line" id="progressLine" style="width: 0%"></div>
+                <div class="step active" data-step="1">
+                    <div class="step-circle">1</div>
+                    <span class="step-label">Basic Info</span>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-circle">2</div>
+                    <span class="step-label">Branding</span>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-circle">3</div>
+                    <span class="step-label">Settings</span>
+                </div>
+                <div class="step" data-step="4">
+                    <div class="step-circle">4</div>
+                    <span class="step-label">Payment</span>
+                </div>
+                <div class="step" data-step="5">
+                    <div class="step-circle">5</div>
+                    <span class="step-label">Complete</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Step 1: Basic Info -->
+        <div class="form-card" id="step1">
+            <h2><i class="fas fa-hotel"></i> Resort Information</h2>
+            <p>Tell us about your resort</p>
+            
+            <form method="post" action="/onboarding/step1/">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label>Resort Name *</label>
+                    <input type="text" name="name" required placeholder="e.g., Grand Resort & Spa">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Phone Number *</label>
+                        <input type="tel" name="phone" required placeholder="+91 98765 43210">
+                    </div>
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" name="email" required placeholder="info@grandresort.com">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Address *</label>
+                    <textarea name="address" required placeholder="Full address of your resort"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Tagline (optional)</label>
+                    <input type="text" name="tagline" placeholder="Welcome to paradise!">
+                </div>
+                
+                <div class="form-actions">
+                    <div></div>
+                    <button type="submit" class="btn btn-primary">
+                        Next: Branding <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Step 2: Branding -->
+        <div class="form-card" id="step2" style="display: none;">
+            <h2><i class="fas fa-palette"></i> Branding</h2>
+            <p>Customize the look and feel</p>
+            
+            <form method="post" action="/onboarding/step2/">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label>Primary Color</label>
+                    <div class="color-picker">
+                        <div class="color-option selected" style="background: #FF6B35;" data-color="#FF6B35"></div>
+                        <div class="color-option" style="background: #004E89;" data-color="#004E89"></div>
+                        <div class="color-option" style="background: #10b981;" data-color="#10b981"></div>
+                        <div class="color-option" style="background: #f59e0b;" data-color="#f59e0b"></div>
+                        <div class="color-option" style="background: #ef4444;" data-color="#ef4444"></div>
+                        <div class="color-option" style="background: #8b5cf6;" data-color="#8b5cf6"></div>
+                        <div class="color-option" style="background: #ec4899;" data-color="#ec4899"></div>
+                        <div class="color-option" style="background: #06b6d4;" data-color="#06b6d4"></div>
+                    </div>
+                    <input type="hidden" name="primary_color" id="primaryColor" value="#FF6B35">
+                </div>
+                
+                <div class="form-group">
+                    <label>Secondary Color</label>
+                    <div class="color-picker">
+                        <div class="color-option" style="background: #FF6B35;" data-color="#FF6B35"></div>
+                        <div class="color-option selected" style="background: #004E89;" data-color="#004E89"></div>
+                        <div class="color-option" style="background: #10b981;" data-color="#10b981"></div>
+                        <div class="color-option" style="background: #f59e0b;" data-color="#f59e0b"></div>
+                        <div class="color-option" style="background: #ef4444;" data-color="#ef4444"></div>
+                        <div class="color-option" style="background: #8b5cf6;" data-color="#8b5cf6"></div>
+                        <div class="color-option" style="background: #ec4899;" data-color="#ec4899"></div>
+                        <div class="color-option" style="background: #06b6d4;" data-color="#06b6d4"></div>
+                    </div>
+                    <input type="hidden" name="secondary_color" id="secondaryColor" value="#004E89">
+                </div>
+                
+                <div class="form-group">
+                    <label>Logo (optional)</label>
+                    <input type="file" name="logo" accept="image/*">
+                </div>
+                
+                <div class="form-group">
+                    <label>Welcome Message</label>
+                    <input type="text" name="welcome_message" value="Welcome! Scan menu and order.">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="showStep(1)">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Next: Settings <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Step 3: Settings -->
+        <div class="form-card" id="step3" style="display: none;">
+            <h2><i class="fas fa-cog"></i> Restaurant Settings</h2>
+            <p>Configure your restaurant operations</p>
+            
+            <form method="post" action="/onboarding/step3/">
+                {% csrf_token %}
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tax (%)</label>
+                        <input type="number" name="tax_percent" value="5" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Service Charge (%)</label>
+                        <input type="number" name="service_charge_percent" value="0" step="0.01">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Minimum Order (₹)</label>
+                        <input type="number" name="min_order_amount" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Est. Prep Time (minutes)</label>
+                        <input type="number" name="estimated_prep_time" value="20">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Number of Tables</label>
+                    <input type="number" name="num_tables" value="10">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="showStep(2)">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Next: Payment <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Step 4: Payment -->
+        <div class="form-card" id="step4" style="display: none;">
+            <h2><i class="fas fa-credit-card"></i> Payment Setup</h2>
+            <p>Connect your Razorpay account to accept payments</p>
+            
+            <form method="post" action="/onboarding/step4/">
+                {% csrf_token %}
+                
+                <div style="background: #f0f9ff; border-radius: 10px; padding: 1rem; margin-bottom: 1.5rem;">
+                    <p><i class="fas fa-info-circle" style="color: #3b82f6;"></i> 
+                    You can skip this step and set up later from your dashboard.</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>Razorpay Key ID</label>
+                    <input type="text" name="razorpay_key_id" placeholder="rzp_test_xxxxx">
+                </div>
+                
+                <div class="form-group">
+                    <label>Razorpay Key Secret</label>
+                    <input type="password" name="razorpay_key_secret" placeholder="xxxxx">
+                </div>
+                
+                <div class="form-group">
+                    <label>WhatsApp Business API Token (optional)</label>
+                    <input type="text" name="whatsapp_token" placeholder="Your WhatsApp API token">
+                </div>
+                
+                <div class="form-group">
+                    <label>WhatsApp Phone Number ID (optional)</label>
+                    <input type="text" name="whatsapp_phone_id" placeholder="Your phone number ID">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="showStep(3)">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Complete Setup <i class="fas fa-check"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Step 5: Success -->
+        <div class="form-card" id="step5" style="display: none;">
+            <div class="success-card">
+                <div class="success-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h2>Your Resort is Ready! 🎉</h2>
+                <p style="margin-bottom: 2rem;">MecGuraServe has been set up for your resort. You can now start adding menu items and managing orders.</p>
+                
+                <div style="display: flex; gap: 1rem; justify-content: center;">
+                    <a href="/dashboard/admin/?tenant=SLUG_HERE" class="btn btn-primary">
+                        <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+                    </a>
+                    <a href="/qr/generate/SLUG_HERE/" class="btn btn-secondary">
+                        <i class="fas fa-qrcode"></i> Generate QR Codes
+                    </a>
+                </div>
+                
+                <div style="margin-top: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 10px; text-align: left;">
+                    <h4>Quick Start Guide:</h4>
+                    <ol style="margin-left: 1rem; margin-top: 0.5rem;">
+                        <li>Add menu items with photos</li>
+                        <li>Generate QR codes for tables</li>
+                        <li>Place QR codes on tables</li>
+                        <li>Guests scan and order!</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showStep(step) {
+            // Hide all steps
+            document.querySelectorAll('.form-card').forEach(card => {
+                card.style.display = 'none';
+            });
+            
+            // Show selected step
+            document.getElementById('step' + step).style.display = 'block';
+            
+            // Update progress
+            document.querySelectorAll('.step').forEach((s, i) => {
+                s.classList.remove('active', 'completed');
+                if (i + 1 < step) s.classList.add('completed');
+                if (i + 1 === step) s.classList.add('active');
+            });
+            
+            // Update progress line
+            const progress = ((step - 1) / 4) * 100;
+            document.getElementById('progressLine').style.width = progress + '%';
+        }
+        
+        // Color picker
+        document.querySelectorAll('.color-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const color = this.dataset.color;
+                this.parentElement.querySelectorAll('.color-option').forEach(o => {
+                    o.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                
+                if (this.parentElement.nextElementSibling) {
+                    this.parentElement.nextElementSibling.value = color;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

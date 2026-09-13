@@ -1,0 +1,433 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Display - {{ tenant.name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #1a1a2e; color: #fff; }
+        
+        .header {
+            background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .header h1 { font-size: 1.5rem; }
+        .header .status { display: flex; gap: 1rem; align-items: center; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #4CAF50; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
+        .stats-bar {
+            display: flex;
+            gap: 2rem;
+            padding: 1rem 2rem;
+            background: #16213e;
+            border-bottom: 1px solid #0f3460;
+        }
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .stat-item .value { font-size: 1.5rem; font-weight: 700; color: #e94560; }
+        .stat-item .label { font-size: 0.8rem; color: #888; }
+        
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            background: #16213e;
+        }
+        .tab {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            background: #0f3460;
+            color: #888;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .tab.active { background: #e94560; color: #fff; }
+        .tab:hover { background: #1a1a4e; color: #fff; }
+        .tab .count {
+            background: rgba(255,255,255,0.2);
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            margin-left: 0.5rem;
+            font-size: 0.8rem;
+        }
+        
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+            padding: 2rem;
+        }
+        
+        .order-card {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border-left: 4px solid #e94560;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .order-card.status-pending { border-left-color: #FFA500; }
+        .order-card.status-confirmed { border-left-color: #2196F3; }
+        .order-card.status-preparing { border-left-color: #9C27B0; }
+        .order-card.status-ready { border-left-color: #4CAF50; }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+        .order-number { font-weight: 700; font-size: 1.1rem; }
+        .order-time { color: #888; font-size: 0.9rem; }
+        .order-table { 
+            background: #0f3460;
+            padding: 0.3rem 0.8rem;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+        
+        .order-items { margin: 1rem 0; }
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #0f3460;
+        }
+        .order-item:last-child { border-bottom: none; }
+        .item-qty { font-weight: 600; color: #e94560; margin-right: 0.5rem; }
+        .item-instructions { color: #888; font-size: 0.8rem; font-style: italic; }
+        
+        .order-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #0f3460;
+        }
+        .order-total { font-size: 1.2rem; font-weight: 700; color: #4CAF50; }
+        
+        .status-btns { display: flex; gap: 0.5rem; }
+        .status-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .status-btn.confirm { background: #2196F3; color: #fff; }
+        .status-btn.prepare { background: #9C27B0; color: #fff; }
+        .status-btn.ready { background: #4CAF50; color: #fff; }
+        .status-btn.serve { background: #00BCD4; color: #fff; }
+        .status-btn:hover { transform: scale(1.05); }
+        
+        .empty-state {
+            text-align: center;
+            padding: 4rem;
+            color: #888;
+        }
+        .empty-state i { font-size: 4rem; margin-bottom: 1rem; }
+        
+        .sound-toggle {
+            background: #0f3460;
+            border: none;
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .sound-toggle.muted { color: #888; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div>
+            <h1>🍳 {{ tenant.name }} Kitchen</h1>
+        </div>
+        <div class="status">
+            <button class="sound-toggle" id="soundToggle" onclick="toggleSound()">
+                <i class="fas fa-volume-up"></i> Sound ON
+            </button>
+            <div class="status-dot"></div>
+            <span>Live</span>
+        </div>
+    </header>
+    
+    <div class="stats-bar">
+        <div class="stat-item">
+            <span class="value" id="pendingCount">{{ stats.total_orders }}</span>
+            <span class="label">Today's Orders</span>
+        </div>
+        <div class="stat-item">
+            <span class="value" id="revenue">₹{{ stats.total_revenue }}</span>
+            <span class="label">Today's Revenue</span>
+        </div>
+    </div>
+    
+    <div class="tabs">
+        <button class="tab active" onclick="filterOrders('all')">
+            All <span class="count" id="allCount">{{ active_orders|length }}</span>
+        </button>
+        <button class="tab" onclick="filterOrders('pending')">
+            New <span class="count" id="pendingCount">{{ pending_count }}</span>
+        </button>
+        <button class="tab" onclick="filterOrders('preparing')">
+            Preparing <span class="count" id="preparingCount">{{ preparing_count }}</span>
+        </button>
+        <button class="tab" onclick="filterOrders('ready')">
+            Ready <span class="count" id="readyCount">{{ ready_count }}</span>
+        </button>
+    </div>
+    
+    <div class="orders-grid" id="ordersGrid">
+        {% for order in active_orders %}
+        <div class="order-card status-{{ order.status }}" data-status="{{ order.status }}" id="order-{{ order.id }}">
+            <div class="order-header">
+                <span class="order-number">{{ order.order_number }}</span>
+                <span class="order-table">Table {{ order.table.table_number }}</span>
+            </div>
+            <div class="order-time">
+                <i class="fas fa-clock"></i>
+                {{ order.created_at|time:"H:i" }} - {{ order.time_since_order }} min ago
+            </div>
+            
+            <div class="order-items">
+                {% for item in order.items.all %}
+                <div class="order-item">
+                    <div>
+                        <span class="item-qty">{{ item.quantity }}x</span>
+                        {{ item.menu_item.name }}
+                        {% if item.special_instructions %}
+                        <div class="item-instructions">{{ item.special_instructions }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="order-footer">
+                <span class="order-total">₹{{ order.total }}</span>
+                <div class="status-btns">
+                    {% if order.status == 'pending' %}
+                    <button class="status-btn confirm" onclick="updateStatus({{ order.id }}, 'confirmed')">
+                        <i class="fas fa-check"></i> Confirm
+                    </button>
+                    {% elif order.status == 'confirmed' %}
+                    <button class="status-btn prepare" onclick="updateStatus({{ order.id }}, 'preparing')">
+                        <i class="fas fa-fire"></i> Start
+                    </button>
+                    {% elif order.status == 'preparing' %}
+                    <button class="status-btn ready" onclick="updateStatus({{ order.id }}, 'ready')">
+                        <i class="fas fa-bell"></i> Ready
+                    </button>
+                    {% elif order.status == 'ready' %}
+                    <button class="status-btn serve" onclick="updateStatus({{ order.id }}, 'served')">
+                        <i class="fas fa-utensils"></i> Served
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <i class="fas fa-coffee"></i>
+            <h2>No active orders</h2>
+            <p>New orders will appear here</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Audio for notifications -->
+    <audio id="notificationSound" preload="auto">
+        <source src="{% static 'sounds/notification.wav' %}" type="audio/wav">
+    </audio>
+    
+    <script>
+        let soundEnabled = true;
+        const csrfToken = '{{ csrf_token }}';
+        const tenantSlug = '{{ tenant.slug }}';
+        
+        // WebSocket connection
+        const ws = new WebSocket(
+            `ws://${window.location.host}/ws/kitchen/${tenantSlug}/`
+        );
+        
+        ws.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            
+            if (data.type === 'new_order') {
+                playNotificationSound();
+                addNewOrder(data.order);
+            } else if (data.type === 'status_update') {
+                updateOrderStatus(data.order_id, data.status);
+            }
+        };
+        
+        ws.onclose = function(e) {
+            console.error('WebSocket closed. Reconnecting...');
+            setTimeout(() => location.reload(), 3000);
+        };
+        
+        function playNotificationSound() {
+            if (soundEnabled) {
+                const audio = document.getElementById('notificationSound');
+                audio.currentTime = 0;
+                audio.play().catch(e => console.log('Audio play failed:', e));
+            }
+        }
+        
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('soundToggle');
+            btn.innerHTML = soundEnabled ? 
+                '<i class="fas fa-volume-up"></i> Sound ON' : 
+                '<i class="fas fa-volume-mute"></i> Sound OFF';
+            btn.classList.toggle('muted', !soundEnabled);
+        }
+        
+        function addNewOrder(order) {
+            const grid = document.getElementById('ordersGrid');
+            const emptyState = grid.querySelector('.empty-state');
+            if (emptyState) emptyState.remove();
+            
+            const itemsHtml = order.items.map(item => `
+                <div class="order-item">
+                    <div>
+                        <span class="item-qty">${item.quantity}x</span>
+                        ${item.name}
+                        ${item.instructions ? `<div class="item-instructions">${item.instructions}</div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+            
+            const html = `
+                <div class="order-card status-pending" data-status="pending" id="order-${order.id}">
+                    <div class="order-header">
+                        <span class="order-number">${order.order_number}</span>
+                        <span class="order-table">Table ${order.table_number}</span>
+                    </div>
+                    <div class="order-time">
+                        <i class="fas fa-clock"></i> Just now
+                    </div>
+                    <div class="order-items">${itemsHtml}</div>
+                    <div class="order-footer">
+                        <span class="order-total">₹${order.total}</span>
+                        <div class="status-btns">
+                            <button class="status-btn confirm" onclick="updateStatus(${order.id}, 'confirmed')">
+                                <i class="fas fa-check"></i> Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            grid.insertAdjacentHTML('afterbegin', html);
+            updateCounts();
+        }
+        
+        async function updateStatus(orderId, status) {
+            try {
+                const response = await fetch('/dashboard/api/update-status/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                    },
+                    body: JSON.stringify({ order_id: orderId, status }),
+                });
+                
+                if (response.ok) {
+                    updateOrderStatus(orderId, status);
+                }
+            } catch (error) {
+                console.error('Status update failed:', error);
+            }
+        }
+        
+        function updateOrderStatus(orderId, status) {
+            const card = document.getElementById(`order-${orderId}`);
+            if (!card) return;
+            
+            card.className = `order-card status-${status}`;
+            card.dataset.status = status;
+            
+            // Update buttons
+            const btns = card.querySelector('.status-btns');
+            const nextStatus = {
+                'pending': 'confirmed',
+                'confirmed': 'preparing',
+                'preparing': 'ready',
+                'ready': 'served',
+            };
+            
+            const nextLabels = {
+                'confirmed': '<i class="fas fa-check"></i> Confirm',
+                'preparing': '<i class="fas fa-fire"></i> Start',
+                'ready': '<i class="fas fa-bell"></i> Ready',
+                'served': '<i class="fas fa-utensils"></i> Served',
+            };
+            
+            if (nextStatus[status]) {
+                btns.innerHTML = `
+                    <button class="status-btn ${status === 'pending' ? 'confirm' : status === 'confirmed' ? 'prepare' : status === 'preparing' ? 'ready' : 'serve'}" 
+                            onclick="updateStatus(${orderId}, '${nextStatus[status]}')">
+                        ${nextLabels[nextStatus[status]]}
+                    </button>
+                `;
+            } else {
+                // Order completed - remove card after 2 seconds
+                setTimeout(() => card.remove(), 2000);
+            }
+            
+            updateCounts();
+        }
+        
+        function filterOrders(status) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.order-card').forEach(card => {
+                if (status === 'all' || card.dataset.status === status) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+        
+        function updateCounts() {
+            const orders = document.querySelectorAll('.order-card');
+            const counts = { all: 0, pending: 0, confirmed: 0, preparing: 0, ready: 0 };
+            
+            orders.forEach(order => {
+                counts.all++;
+                counts[order.dataset.status]++;
+            });
+            
+            document.getElementById('allCount').textContent = counts.all;
+            document.getElementById('pendingCount').textContent = counts.pending;
+            document.getElementById('preparingCount').textContent = counts.preparing + counts.confirmed;
+            document.getElementById('readyCount').textContent = counts.ready;
+        }
+        
+        // Auto-refresh every 30 seconds
+        setInterval(() => location.reload(), 30000);
+    </script>
+</body>
+</html>

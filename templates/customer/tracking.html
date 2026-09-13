@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Track Order - {{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="tracking-page">
+    <div class="tracking-card">
+        <div class="card-header">
+            <h1>Order Tracking</h1>
+            <p class="order-number">{{ order.order_number }}</p>
+        </div>
+        
+        <!-- Order Info -->
+        <div class="order-info-row">
+            <div class="info-item">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Table {{ order.table.table_number }}</span>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-clock"></i>
+                <span>{{ order.created_at|time:"g:i A" }}</span>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-rupee-sign"></i>
+                <span>₹{{ order.total }}</span>
+            </div>
+        </div>
+        
+        <!-- Status Timeline -->
+        <div class="status-timeline">
+            <div class="timeline-item {% if order.status == 'pending' %}active{% endif %} completed">
+                <div class="timeline-marker">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="timeline-content">
+                    <h4>Order Placed</h4>
+                    <p>{{ order.created_at|time:"g:i A" }}</p>
+                </div>
+            </div>
+            
+            <div class="timeline-item {% if order.status == 'confirmed' %}active{% endif %} {% if order.confirmed_at %}completed{% endif %}">
+                <div class="timeline-marker">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="timeline-content">
+                    <h4>Confirmed</h4>
+                    {% if order.confirmed_at %}
+                    <p>{{ order.confirmed_at|time:"g:i A" }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="timeline-item {% if order.status == 'preparing' %}active{% endif %} {% if order.preparing_at %}completed{% endif %}">
+                <div class="timeline-marker">
+                    <i class="fas fa-fire"></i>
+                </div>
+                <div class="timeline-content">
+                    <h4>Preparing</h4>
+                    {% if order.status == 'preparing' %}
+                    <p class="est-time">~{{ order.estimated_time }} mins left</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="timeline-item {% if order.status == 'ready' %}active{% endif %} {% if order.ready_at %}completed{% endif %}">
+                <div class="timeline-marker">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <div class="timeline-content">
+                    <h4>Ready</h4>
+                    <p>Almost there!</p>
+                </div>
+            </div>
+            
+            <div class="timeline-item {% if order.status == 'served' %}active{% endif %} {% if order.served_at %}completed{% endif %}">
+                <div class="timeline-marker">
+                    <i class="fas fa-utensils"></i>
+                </div>
+                <div class="timeline-content">
+                    <h4>Served</h4>
+                    <p>Enjoy your meal!</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Order Items -->
+        <div class="order-items">
+            <h3>Order Items</h3>
+            {% for item in items %}
+            <div class="order-item">
+                <span class="item-qty">{{ item.quantity }}x</span>
+                <span class="item-name">{{ item.menu_item.name }}</span>
+                <span class="item-price">₹{{ item.total_price }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Payment Info -->
+        <div class="payment-info">
+            {% if order.payment_status == 'paid' %}
+            <div class="payment-badge paid">
+                <i class="fas fa-check-circle"></i>
+                Paid via {{ order.get_payment_method_display }}
+            </div>
+            {% else %}
+            <div class="payment-badge pending">
+                <i class="fas fa-hourglass-half"></i>
+                Payment Pending
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- WhatsApp Button -->
+        {% if order.customer.phone %}
+        <a href="https://wa.me/91{{ order.customer.phone }}" class="whatsapp-btn" target="_blank">
+            <i class="fab fa-whatsapp"></i>
+            View Bill on WhatsApp
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Auto-refresh page every 30 seconds
+    setTimeout(function() {
+        location.reload();
+    }, 30000);
+</script>
+
+{% endblock %}

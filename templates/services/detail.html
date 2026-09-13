@@ -1,0 +1,196 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ service.name }} - MecGuraServe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; }
+        
+        .back-btn {
+            position: fixed; top: 20px; left: 20px; z-index: 100;
+            background: white; border-radius: 50%; width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-decoration: none; color: #333;
+        }
+        
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 4rem 2rem; text-align: center;
+        }
+        .hero-icon {
+            width: 80px; height: 80px; border-radius: 20px;
+            background: rgba(255,255,255,0.2); display: flex;
+            align-items: center; justify-content: center; font-size: 2rem;
+            margin: 0 auto 1.5rem;
+        }
+        .hero h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .hero p { font-size: 1.1rem; opacity: 0.9; max-width: 600px; margin: 0 auto; }
+        
+        .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        
+        .card {
+            background: white; border-radius: 16px; padding: 2rem;
+            margin-bottom: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .card h2 {
+            font-size: 1.3rem; color: #333; margin-bottom: 1rem;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .card h2 i { color: #667eea; }
+        
+        .features-list {
+            list-style: none; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;
+        }
+        .features-list li {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px; background: #f8f9fa; border-radius: 8px;
+        }
+        .features-list li i { color: #10b981; }
+        
+        .pricing-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border-radius: 16px; padding: 2rem; text-align: center;
+        }
+        .pricing-amount { font-size: 3rem; font-weight: 700; margin: 1rem 0; }
+        .pricing-original { text-decoration: line-through; opacity: 0.7; font-size: 1.2rem; margin-left: 10px; }
+        
+        .btn {
+            display: inline-block; padding: 15px 30px; border-radius: 10px;
+            font-weight: 600; text-decoration: none; transition: all 0.2s;
+            border: none; cursor: pointer; font-size: 1rem;
+        }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5a6fd6; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-large { padding: 15px 40px; font-size: 1.1rem; }
+        
+        .manual-section {
+            background: #f8f9fa; border-radius: 12px; padding: 1.5rem;
+            white-space: pre-line; line-height: 1.8; color: #444;
+        }
+        
+        .status-badge {
+            display: inline-block; padding: 8px 16px; border-radius: 20px;
+            font-weight: 600; font-size: 0.9rem;
+        }
+        .status-active { background: #d1fae5; color: #065f46; }
+        .status-inactive { background: #fee2e2; color: #991b1b; }
+        
+        .action-buttons {
+            display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <a href="{% url 'service_catalog' %}" class="back-btn">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    
+    <div class="hero">
+        <div class="hero-icon">
+            <i class="{{ service.icon }}"></i>
+        </div>
+        <h1>{{ service.name }}</h1>
+        <p>{{ service.full_description }}</p>
+    </div>
+    
+    <div class="container">
+        <!-- Status -->
+        <div class="card">
+            <h2><i class="fas fa-info-circle"></i> Service Status</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    {% if is_active %}
+                    <span class="status-badge status-active">✓ Active</span>
+                    {% else %}
+                    <span class="status-badge status-inactive">✗ Inactive</span>
+                    {% endif %}
+                </div>
+                <div>
+                    {% if is_active %}
+                    <a href="{% url 'service_settings' service.slug %}" class="btn btn-primary">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                    <form method="post" action="{% url 'deactivate_service' service.slug %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Deactivate</button>
+                    </form>
+                    {% else %}
+                    <form method="post" action="{% url 'activate_service' service.slug %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success btn-large">Activate This Service</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Features -->
+        <div class="card">
+            <h2><i class="fas fa-check-circle"></i> Features Included</h2>
+            <ul class="features-list">
+                {% for feature in service.features %}
+                <li><i class="fas fa-check"></i> {{ feature }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <!-- Pricing -->
+        <div class="pricing-box">
+            <h3 style="margin-bottom: 0.5rem;">Pricing</h3>
+            <div class="pricing-amount">
+                {{ service.get_price_display }}
+                {% if service.original_price > service.price %}
+                <span class="pricing-original">₹{{ service.original_price }}</span>
+                {% endif %}
+            </div>
+            {% if service.price_type != 'free' %}
+            <p style="opacity: 0.9;">Billed {% if service.price_type == 'monthly' %}monthly{% elif service.price_type == 'one_time' %}once{% elif service.price_type == 'per_order' %}per order{% endif %}</p>
+            {% endif %}
+        </div>
+        
+        <!-- Manual -->
+        {% if service.manual_content %}
+        <div class="card">
+            <h2><i class="fas fa-book"></i> {{ service.manual_title|default:"How to Use" }}</h2>
+            <div class="manual-section">
+                {{ service.manual_content }}
+            </div>
+            
+            {% if service.setup_guide_url %}
+            <a href="{{ service.setup_guide_url }}" target="_blank" class="btn btn-primary" style="margin-top: 1rem;">
+                <i class="fas fa-video"></i> Watch Video Tutorial
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <!-- Requirements -->
+        <div class="card">
+            <h2><i class="fas fa-exclamation-triangle"></i> Requirements</h2>
+            <ul style="list-style: none;">
+                {% if service.requires_whatsapp %}
+                <li style="padding: 8px 0;"><i class="fab fa-whatsapp" style="color: #25d366;"></i> WhatsApp Business API Required</li>
+                {% endif %}
+                {% if service.requires_razorpay %}
+                <li style="padding: 8px 0;"><i class="fas fa-credit-card" style="color: #667eea;"></i> Razorpay Account Required</li>
+                {% endif %}
+                {% if service.requires_staff %}
+                <li style="padding: 8px 0;"><i class="fas fa-users" style="color: #f59e0b;"></i> Staff Training Required</li>
+                {% endif %}
+                {% if not service.requires_whatsapp and not service.requires_razorpay and not service.requires_staff %}
+                <li style="padding: 8px 0; color: #10b981;"><i class="fas fa-check"></i> No special requirements</li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

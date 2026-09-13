@@ -1,0 +1,153 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owner Dashboard - {{ tenant.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #333; }
+        .header { background: linear-gradient(135deg, {{ tenant.primary_color }}, {{ tenant.secondary_color }}); color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 1.4rem; }
+        .container { padding: 1.5rem; max-width: 1200px; margin: 0 auto; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+        .stat-card { background: white; border-radius: 10px; padding: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .stat-card .icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .stat-card .value { font-size: 1.5rem; font-weight: 700; }
+        .stat-card .label { font-size: 0.8rem; color: #666; }
+        
+        .quick-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .quick-link {
+            background: white; border-radius: 12px; padding: 1.5rem; text-align: center;
+            text-decoration: none; color: #333; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .quick-link:hover { transform: translateY(-3px); box-shadow: 0 4px 15px rgba(0,0,0,0.12); }
+        .quick-link i { font-size: 2rem; margin-bottom: 0.75rem; display: block; }
+        .quick-link h3 { font-size: 1rem; margin-bottom: 0.3rem; }
+        .quick-link p { font-size: 0.8rem; color: #666; }
+        
+        .card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1.5rem; }
+        .card h2 { font-size: 1.2rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #f0f0f0; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        th { color: #666; font-weight: 500; font-size: 0.85rem; }
+        .status-badge { padding: 0.2rem 0.6rem; border-radius: 15px; font-size: 0.75rem; font-weight: 600; }
+        .status-pending { background: #FFF3E0; color: #EF6C00; }
+        .status-confirmed { background: #E8F5E9; color: #388E3C; }
+        .status-preparing { background: #F3E5F5; color: #7B1FA2; }
+        .status-ready { background: #E8F5E9; color: #388E3C; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1><i class="fas fa-tachometer-alt"></i> {{ tenant.name }} Dashboard</h1>
+        <div style="display: flex; gap: 1rem;">
+            <a href="{% url 'kitchen_display' %}?tenant={{ tenant.slug }}" style="color: white; text-decoration: none;"><i class="fas fa-utensils"></i> Kitchen</a>
+            <a href="{% url 'waiter_dashboard' %}?tenant={{ tenant.slug }}" style="color: white; text-decoration: none;"><i class="fas fa-concierge-bell"></i> Waiter</a>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="icon" style="color: {{ tenant.primary_color }};"><i class="fas fa-shopping-cart"></i></div>
+                <div class="value">{{ today_stats.total_orders }}</div>
+                <div class="label">Today's Orders</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon" style="color: #4CAF50;"><i class="fas fa-rupee-sign"></i></div>
+                <div class="value">₹{{ today_stats.total_revenue }}</div>
+                <div class="label">Today's Revenue</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon" style="color: #FF9800;"><i class="fas fa-clock"></i></div>
+                <div class="value">{{ today_stats.pending_orders }}</div>
+                <div class="label">Pending Orders</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon" style="color: #2196F3;"><i class="fas fa-calendar"></i></div>
+                <div class="value">{{ week_stats.total_orders }}</div>
+                <div class="label">This Week</div>
+            </div>
+        </div>
+        
+        <div class="quick-links">
+            <a href="{% url 'table_management' %}?tenant={{ tenant.slug }}" class="quick-link">
+                <i class="fas fa-th-large" style="color: {{ tenant.primary_color }};"></i>
+                <h3>Table Management</h3>
+                <p>Floor plan, QR codes, layout</p>
+            </a>
+            <a href="{% url 'reservation_management' %}?tenant={{ tenant.slug }}" class="quick-link">
+                <i class="fas fa-calendar-check" style="color: #4CAF50;"></i>
+                <h3>Reservations</h3>
+                <p>Manage table bookings</p>
+            </a>
+            <a href="{% url 'advance_payments' %}?tenant={{ tenant.slug }}" class="quick-link">
+                <i class="fas fa-rupee-sign" style="color: #FF9800;"></i>
+                <h3>Advance Payments</h3>
+                <p>Record manual advances</p>
+            </a>
+            <a href="{% url 'complimentary_services' %}?tenant={{ tenant.slug }}" class="quick-link">
+                <i class="fas fa-gift" style="color: #E91E63;"></i>
+                <h3>Complimentary</h3>
+                <p>Free services management</p>
+            </a>
+            <a href="{% url 'menu_management' %}?tenant={{ tenant.slug }}" class="quick-link">
+                <i class="fas fa-utensils" style="color: #9C27B0;"></i>
+                <h3>Menu</h3>
+                <p>Add/edit menu items</p>
+            </a>
+            <a href="{% url 'order_management' %}?tenant={{ tenant.slug }}" class="quick-link">
+                <i class="fas fa-receipt" style="color: #00BCD4;"></i>
+                <h3>Orders</h3>
+                <p>View all orders</p>
+            </a>
+            <a href="{% url 'staff_management' %}?tenant={{ tenant.slug }}" class="quick-link">
+                <i class="fas fa-users" style="color: #795548;"></i>
+                <h3>Staff</h3>
+                <p>Manage waiters, kitchen, etc.</p>
+            </a>
+            <a href="{% url 'whatsapp_dashboard' %}?tenant={{ tenant.slug }}" class="quick-link">
+                <i class="fab fa-whatsapp" style="color: #25D366;"></i>
+                <h3>WhatsApp</h3>
+                <p>Messages, templates, chats</p>
+            </a>
+        </div>
+        
+        <div class="card">
+            <h2>Recent Orders</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Table</th>
+                        <th>Customer</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in recent_orders %}
+                    <tr>
+                        <td><strong>{{ order.order_number }}</strong></td>
+                        <td>Table {{ order.table.table_number|default:"N/A" }}</td>
+                        <td>{{ order.customer.name|default:"Guest" }}</td>
+                        <td>₹{{ order.total }}</td>
+                        <td><span class="status-badge status-{{ order.status }}">{{ order.status }}</span></td>
+                        <td>{{ order.created_at|time:"H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" style="text-align: center; padding: 2rem; color: #999;">No orders yet today</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

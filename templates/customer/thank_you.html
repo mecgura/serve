@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Thank You - {{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="thankyou-page">
+    <div class="thankyou-card">
+        <div class="success-animation">
+            <div class="checkmark">
+                <i class="fas fa-check"></i>
+            </div>
+        </div>
+        
+        <h1>Order Placed!</h1>
+        <p class="order-number">{{ order.order_number }}</p>
+        
+        <div class="order-details">
+            <div class="detail-row">
+                <span>Table</span>
+                <strong>{{ order.table.table_number }}</strong>
+            </div>
+            <div class="detail-row">
+                <span>Estimated Time</span>
+                <strong>{{ order.estimated_time }} mins</strong>
+            </div>
+            <div class="detail-row">
+                <span>Total</span>
+                <strong>₹{{ order.total }}</strong>
+            </div>
+        </div>
+        
+        {% if order.payment_method == 'razorpay' and order.payment_status == 'paid' %}
+        <div class="payment-status paid">
+            <i class="fas fa-check-circle"></i>
+            Payment Confirmed
+        </div>
+        {% elif order.payment_method != 'razorpay' %}
+        <div class="payment-status pending">
+            <i class="fas fa-info-circle"></i>
+            Pay ₹{{ order.total }} at the counter
+        </div>
+        {% endif %}
+        
+        <div class="whatsapp-notice">
+            <i class="fab fa-whatsapp"></i>
+            <p>Bill will be sent to your WhatsApp</p>
+        </div>
+        
+        <a href="{% url 'order_tracking' order.id %}" class="track-btn">
+            <span>Track Your Order</span>
+            <i class="fas fa-arrow-right"></i>
+        </a>
+        
+        <div class="thank-you-message">
+            <p>Thank you for dining with us!</p>
+            <p class="brand">Powered by <strong>MecGuraServe</strong></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,179 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ tenant.name }} Services - Superadmin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; }
+        
+        .sidebar {
+            position: fixed; left: 0; top: 0; bottom: 0; width: 260px;
+            background: linear-gradient(180deg, #1e3a5f 0%, #0d2137 100%);
+            color: white; z-index: 100;
+        }
+        .sidebar-header { padding: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-menu { padding: 1rem 0; }
+        .menu-section { padding: 0.5rem 1.5rem; font-size: 0.7rem; text-transform: uppercase; opacity: 0.6; margin-top: 0.5rem; }
+        .menu-item {
+            display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.5rem;
+            color: white; text-decoration: none; transition: all 0.2s;
+        }
+        .menu-item:hover { background: rgba(255,255,255,0.1); }
+        .menu-item.active { background: rgba(255,255,255,0.2); border-left: 3px solid white; }
+        
+        .main-content { margin-left: 260px; min-height: 100vh; }
+        
+        .top-bar {
+            background: white; padding: 1rem 1.5rem;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .content { padding: 1.5rem; }
+        
+        .page-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .tenant-info {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;
+        }
+        
+        .services-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        
+        .service-item {
+            background: white; border-radius: 10px; padding: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        
+        .service-info { display: flex; align-items: center; gap: 12px; }
+        .service-icon {
+            width: 40px; height: 40px; border-radius: 8px;
+            background: #f0f2f5; display: flex; align-items: center; justify-content: center;
+            color: #3b82f6;
+        }
+        .service-name { font-weight: 600; color: #333; }
+        .service-price { font-size: 0.8rem; color: #666; }
+        
+        .toggle-switch {
+            position: relative; display: inline-block; width: 44px; height: 24px;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background: #ccc; transition: .4s; border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 18px; width: 18px;
+            left: 3px; bottom: 3px; background: white; transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background: #10b981; }
+        input:checked + .slider:before { transform: translateX(20px); }
+        
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 20px; border-radius: 8px; font-weight: 600;
+            text-decoration: none; transition: all 0.2s; border: none; cursor: pointer;
+        }
+        .btn-secondary { background: #6b7280; color: white; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>MecGuraServe</h2>
+            <p>Superadmin Panel</p>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-section">Main</div>
+            <a href="/superadmin/" class="menu-item">
+                <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+            </a>
+            
+            <div class="menu-section">Management</div>
+            <a href="/superadmin/tenants/" class="menu-item">
+                <i class="fas fa-hotel"></i> <span>Resorts</span>
+            </a>
+            <a href="/superadmin/services/" class="menu-item">
+                <i class="fas fa-puzzle-piece"></i> <span>Services</span>
+            </a>
+            <a href="/superadmin/tenant-services/" class="menu-item active">
+                <i class="fas fa-plug"></i> <span>Tenant Services</span>
+            </a>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <div class="top-bar">
+            <h1>{{ tenant.name }} - Services</h1>
+            <a href="/superadmin/tenant-services/" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+        
+        <div class="content">
+            <div class="tenant-info">
+                <h2><i class="fas fa-hotel"></i> {{ tenant.name }}</h2>
+                <p>{{ tenant.slug }}.mecguraserve.com | Plan: {{ tenant.plan }}</p>
+            </div>
+            
+            <h3 style="margin-bottom: 1rem;">Available Services ({{ services.count }})</h3>
+            
+            <div class="services-grid">
+                {% for service in services %}
+                <div class="service-item">
+                    <div class="service-info">
+                        <div class="service-icon">
+                            <i class="{{ service.icon }}"></i>
+                        </div>
+                        <div>
+                            <div class="service-name">{{ service.name }}</div>
+                            <div class="service-price">{{ service.get_price_display }}</div>
+                        </div>
+                    </div>
+                    
+                    <label class="toggle-switch">
+                        <input type="checkbox" 
+                               {% if service.id in activated_services %}checked{% endif %}
+                               onchange="toggleTenantService({{ tenant.id }}, {{ service.id }}, this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        async function toggleTenantService(tenantId, serviceId, isActive) {
+            try {
+                const response = await fetch(`/superadmin/tenant-services/${tenantId}/toggle/${serviceId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Service toggled:', data);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

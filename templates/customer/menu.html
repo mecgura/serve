@@ -1,0 +1,635 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ tenant.name }} - Menu{% endblock %}
+
+{% if tenant.favicon %}
+{% block favicon %}<link rel="icon" href="{{ tenant.favicon.url }}">{% endblock %}
+{% endif %}
+
+{% block extra_css %}
+<style>
+    {% if tenant.background_image %}
+    .app {
+        background-image: url('{{ tenant.background_image.url }}');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+    }
+    .menu-content, .category-section {
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(10px);
+    }
+    {% endif %}
+    
+    /* Dynamic Colors */
+    .header { background: {{ tenant.primary_color }}; }
+    .tab-btn.active { background: {{ tenant.primary_color }}; }
+    .add-btn { background: {{ tenant.primary_color }}; }
+    .cart-btn { background: {{ tenant.primary_color }}; }
+    .item-price { color: {{ tenant.primary_color }}; }
+    .category-title { border-color: {{ tenant.primary_color }}; }
+    .place-order-btn { background: {{ tenant.primary_color }}; }
+    .coupon-btn { background: {{ tenant.secondary_color }}; }
+    .welcome-message { background: linear-gradient(135deg, {{ tenant.primary_color }} 0%, {{ tenant.secondary_color }} 100%); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="app" style="--primary: {{ tenant.primary_color }}; --secondary: {{ tenant.secondary_color }};">
+    
+    {% if tenant.banner_image %}
+    <!-- Banner Image -->
+    <div class="banner-image">
+        <img src="{{ tenant.banner_image.url }}" alt="{{ tenant.name }}">
+    </div>
+    {% endif %}
+    
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="restaurant-info">
+                {% if tenant.logo %}
+                <img src="{{ tenant.logo.url }}" alt="{{ tenant.name }}" class="logo">
+                {% endif %}
+                <div>
+                    <h1 class="restaurant-name">{{ tenant.name }}</h1>
+                    {% if tenant.tagline %}
+                    <p class="tagline">{{ tenant.tagline }}</p>
+                    {% endif %}
+                    <p class="table-info"><i class="fas fa-map-marker-alt"></i> Table {{ table.table_number }}</p>
+                </div>
+            </div>
+            <button class="cart-btn" onclick="toggleCart()">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="cart-count" id="cartCount">0</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Welcome Message -->
+    {% if tenant.welcome_message %}
+    <div class="welcome-message">
+        <i class="fas fa-hand-sparkles"></i>
+        {{ tenant.welcome_message }}
+    </div>
+    {% endif %}
+
+    <!-- Customer Info Bar -->
+    <div class="customer-bar">
+        {% if request.session.customer_name %}
+        <span><i class="fas fa-user"></i> {{ request.session.customer_name }}</span>
+        {% else %}
+        <a href="{% url 'customer_details' %}" class="add-details-btn">
+            <i class="fas fa-user-plus"></i> Add your details
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Active Offers Banner -->
+    {% if active_offers %}
+    <div class="offers-banner">
+        <div class="offers-scroll">
+            {% for offer in active_offers %}
+            <div class="offer-item">
+                <i class="fas fa-tag"></i>
+                {{ offer.title }} - {{ offer.description }}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Happy Hours Banner -->
+    {% if active_happy_hours %}
+    <div class="happy-hours-banner">
+        <i class="fas fa-clock"></i>
+        Happy Hour Active! 
+        {% for hh in active_happy_hours %}
+        <strong>{{ hh.discount_percent }}% OFF</strong> until {{ hh.end_time|time:"g:i A" }}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Category Tabs -->
+    <div class="filter-section">
+        <div class="category-tabs" id="categoryTabs">
+            {% for category in categories %}
+            <button class="tab-btn {% if forloop.first %}active{% endif %}" 
+                    onclick="scrollToCategory({{ category.id }})">
+                {{ category.name }}
+            </button>
+            {% endfor %}
+        </div>
+        
+        <!-- Veg/Non-Veg Filter -->
+        <div class="veg-filter">
+            <button class="filter-btn active" onclick="filterItems('all')" data-filter="all">
+                All
+            </button>
+            <button class="filter-btn veg-btn" onclick="filterItems('veg')" data-filter="veg">
+                <span class="dot veg mini"><span class="dot-inner"></span></span> Veg
+            </button>
+            <button class="filter-btn nonveg-btn" onclick="filterItems('nonveg')" data-filter="nonveg">
+                <span class="dot nonveg mini"><span class="dot-inner"></span></span> Non-Veg
+            </button>
+        </div>
+    </div>
+
+    <!-- Menu Content -->
+    <main class="menu-content">
+        {% for category in categories %}
+        <section class="category-section" id="category-{{ category.id }}">
+            <h2 class="category-title">{{ category.name }}</h2>
+            
+            <div class="items-grid">
+                {% for item in category.items.all %}
+                {% if item.is_available %}
+                <div class="menu-item {% if item.is_vegetarian %}is-veg{% else %}is-nonveg{% endif %}" data-id="{{ item.id }}" data-price="{{ item.price }}" data-name="{{ item.name }}" data-type="{% if item.is_vegetarian %}veg{% else %}nonveg{% endif %}">
+                    <div class="item-image">
+                        {% if item.image and item.image.name %}
+                        <img src="{{ item.image.url }}" alt="{{ item.name }}">
+                        {% else %}
+                        <div class="placeholder-image">
+                            <i class="fas fa-utensils"></i>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Veg/Non-Veg Dot -->
+                        <div class="veg-nonveg-dot">
+                            {% if item.is_vegetarian %}
+                            <span class="dot veg" title="Vegetarian">
+                                <span class="dot-inner"></span>
+                            </span>
+                            {% else %}
+                            <span class="dot nonveg" title="Non-Vegetarian">
+                                <span class="dot-inner"></span>
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if item.is_bestseller %}
+                        <span class="badge bestseller">Bestseller</span>
+                        {% endif %}
+                        {% if item.is_new %}
+                        <span class="badge new">New</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="item-info">
+                        <h3 class="item-name">{{ item.name }}</h3>
+                        {% if item.description %}
+                        <p class="item-desc">{{ item.description|truncatewords:15 }}</p>
+                        {% endif %}
+                        <div class="item-footer">
+                            <span class="item-price">₹{{ item.price }}</span>
+                            <div class="item-actions">
+                                <button class="add-btn" onclick="addToCart({{ item.id }}, '{{ item.name|escapejs }}', {{ item.price }})">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+    </main>
+
+    <!-- Cart Sidebar -->
+    <div class="cart-overlay" id="cartOverlay" onclick="toggleCart()"></div>
+    <div class="cart-sidebar" id="cartSidebar">
+        <div class="cart-header">
+            <h2>Your Order</h2>
+            <button class="close-cart" onclick="toggleCart()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="cart-items" id="cartItems">
+            <!-- Cart items will be added here dynamically -->
+        </div>
+        
+        <div class="cart-empty" id="cartEmpty">
+            <i class="fas fa-shopping-basket"></i>
+            <p>Your cart is empty</p>
+            <span>Add items from the menu</span>
+        </div>
+        
+        <div class="cart-footer" id="cartFooter" style="display: none;">
+            <!-- Coupon Section -->
+            <div class="coupon-section">
+                <div class="coupon-input-group">
+                    <input type="text" id="couponInput" placeholder="Enter coupon code" maxlength="20">
+                    <button onclick="applyCoupon()" class="coupon-btn">Apply</button>
+                </div>
+                <div id="couponMessage" class="coupon-message"></div>
+                <div id="appliedCoupon" class="applied-coupon" style="display: none;">
+                    <span id="couponCode"></span>
+                    <button onclick="removeCoupon()" class="remove-coupon">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Order Summary -->
+            <div class="order-summary">
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span id="subtotal">₹0</span>
+                </div>
+                <div class="summary-row discount" id="discountRow" style="display: none;">
+                    <span>Discount (<span id="couponLabel"></span>)</span>
+                    <span id="discountAmount">-₹0</span>
+                </div>
+                <div class="summary-row">
+                    <span>Tax ({{ tenant.tax_percent }}%)</span>
+                    <span id="taxAmount">₹0</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Total</span>
+                    <span id="totalAmount">₹0</span>
+                </div>
+            </div>
+            
+            <!-- Payment Options -->
+            <div class="payment-options">
+                <label class="payment-option">
+                    <input type="radio" name="payment" value="razorpay" checked>
+                    <span class="option-label">
+                        <i class="fas fa-credit-card"></i>
+                        Pay Online
+                    </span>
+                </label>
+                <label class="payment-option">
+                    <input type="radio" name="payment" value="cash_counter">
+                    <span class="option-label">
+                        <i class="fas fa-money-bill"></i>
+                        Pay at Counter
+                    </span>
+                </label>
+            </div>
+            
+            <!-- Estimated Time -->
+            <div class="est-time">
+                <i class="fas fa-clock"></i>
+                Estimated time: {{ tenant.estimated_prep_time }} mins
+            </div>
+            
+            <!-- Place Order Button -->
+            <button class="place-order-btn" id="placeOrderBtn" onclick="placeOrder()">
+                <span>Place Order</span>
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Existing Order Banner -->
+    {% if existing_order %}
+    <div class="existing-order-banner">
+        <div class="order-info">
+            <span class="order-number">{{ existing_order.order_number }}</span>
+            <span class="order-status status-{{ existing_order.status }}">
+                {{ existing_order.get_status_display }}
+            </span>
+        </div>
+        <a href="{% url 'order_tracking' existing_order.id %}" class="track-btn">
+            Track Order <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Footer -->
+    <footer class="menu-footer">
+        {% if tenant.footer_text %}
+        <p>{{ tenant.footer_text }}</p>
+        {% endif %}
+        <p class="powered-by">Powered by <strong>MecGuraServe</strong></p>
+    </footer>
+
+</div>
+
+<!-- Razorpay Script -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+    // Cart state
+    let cart = [];
+    let discount = 0;
+    let couponCode = '';
+    
+    // CSRF Token
+    const csrfToken = '{{ csrf_token }}';
+    
+    // Add to cart
+    function addToCart(id, name, price) {
+        const existing = cart.find(item => item.id === id);
+        if (existing) {
+            existing.quantity += 1;
+        } else {
+            cart.push({ id, name, price, quantity: 1 });
+        }
+        updateCart();
+        showAddedAnimation();
+    }
+    
+    // Remove from cart
+    function removeFromCart(id) {
+        cart = cart.filter(item => item.id !== id);
+        updateCart();
+    }
+    
+    // Update quantity
+    function updateQuantity(id, change) {
+        const item = cart.find(item => item.id === id);
+        if (item) {
+            item.quantity += change;
+            if (item.quantity <= 0) {
+                removeFromCart(id);
+            } else {
+                updateCart();
+            }
+        }
+    }
+    
+    // Update cart display
+    function updateCart() {
+        const cartItems = document.getElementById('cartItems');
+        const cartEmpty = document.getElementById('cartEmpty');
+        const cartFooter = document.getElementById('cartFooter');
+        const cartCount = document.getElementById('cartCount');
+        
+        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+        cartCount.textContent = totalItems;
+        
+        if (cart.length === 0) {
+            cartEmpty.style.display = 'flex';
+            cartFooter.style.display = 'none';
+            cartItems.innerHTML = '';
+            return;
+        }
+        
+        cartEmpty.style.display = 'none';
+        cartFooter.style.display = 'block';
+        
+        // Render cart items
+        cartItems.innerHTML = cart.map(item => `
+            <div class="cart-item">
+                <div class="item-details">
+                    <span class="item-name">${item.name}</span>
+                    <span class="item-price">₹${item.price * item.quantity}</span>
+                </div>
+                <div class="item-qty">
+                    <button onclick="updateQuantity(${item.id}, -1)">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <span>${item.quantity}</span>
+                    <button onclick="updateQuantity(${item.id}, 1)">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+        
+        // Calculate totals
+        calculateTotals();
+    }
+    
+    // Calculate totals
+    function calculateTotals() {
+        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const tax = subtotal * {{ tenant.tax_percent|floatformat:2 }} / 100;
+        const total = subtotal - discount + tax;
+        
+        document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+        document.getElementById('taxAmount').textContent = `₹${tax.toFixed(2)}`;
+        document.getElementById('totalAmount').textContent = `₹${total.toFixed(2)}`;
+        
+        if (discount > 0) {
+            document.getElementById('discountRow').style.display = 'flex';
+            document.getElementById('discountAmount').textContent = `-₹${discount.toFixed(2)}`;
+            document.getElementById('couponLabel').textContent = couponCode;
+        } else {
+            document.getElementById('discountRow').style.display = 'none';
+        }
+    }
+    
+    // Apply coupon
+    async function applyCoupon() {
+        const code = document.getElementById('couponInput').value.trim();
+        if (!code) return;
+        
+        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        
+        try {
+            const response = await fetch('/menu/api/apply-coupon/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({ code, subtotal }),
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                discount = parseFloat(data.discount);
+                couponCode = data.coupon_code;
+                
+                document.getElementById('couponInput').style.display = 'none';
+                document.querySelector('.coupon-btn').style.display = 'none';
+                document.getElementById('appliedCoupon').style.display = 'flex';
+                document.getElementById('couponCode').textContent = couponCode;
+                document.getElementById('couponMessage').innerHTML = '';
+                
+                calculateTotals();
+            } else {
+                document.getElementById('couponMessage').innerHTML = 
+                    `<span class="error">${data.error}</span>`;
+            }
+        } catch (error) {
+            console.error('Coupon error:', error);
+        }
+    }
+    
+    // Remove coupon
+    async function removeCoupon() {
+        try {
+            await fetch('/menu/api/remove-coupon/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                },
+            });
+            
+            discount = 0;
+            couponCode = '';
+            
+            document.getElementById('couponInput').style.display = 'block';
+            document.querySelector('.coupon-btn').style.display = 'block';
+            document.getElementById('appliedCoupon').style.display = 'none';
+            document.getElementById('couponInput').value = '';
+            
+            calculateTotals();
+        } catch (error) {
+            console.error('Remove coupon error:', error);
+        }
+    }
+    
+    // Toggle cart
+    function toggleCart() {
+        document.getElementById('cartSidebar').classList.toggle('open');
+        document.getElementById('cartOverlay').classList.toggle('open');
+    }
+    
+    // Place order
+    async function placeOrder() {
+        if (cart.length === 0) return;
+        
+        const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
+        
+        try {
+            const response = await fetch('/menu/api/place-order/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({
+                    items: cart,
+                    payment_method: paymentMethod,
+                }),
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                if (paymentMethod === 'razorpay') {
+                    // Initiate Razorpay payment
+                    initiateRazorpayPayment(data);
+                } else {
+                    // Cash/Card at counter - redirect to thank you
+                    window.location.href = `/menu/thank-you/${data.order_id}/`;
+                }
+            } else {
+                alert(data.error || 'Failed to place order');
+            }
+        } catch (error) {
+            console.error('Order error:', error);
+            alert('Something went wrong. Please try again.');
+        }
+    }
+    
+    // Razorpay payment
+    function initiateRazorpayPayment(orderData) {
+        const options = {
+            key: orderData.razorpay_key,
+            amount: orderData.total * 100, // Amount in paise
+            currency: 'INR',
+            name: '{{ tenant.name }}',
+            description: `Order #${orderData.order_number}`,
+            order_id: orderData.razorpay_order_id,
+            handler: function(response) {
+                // Payment successful - verify on server
+                verifyPayment(response, orderData.order_id);
+            },
+            prefill: {
+                name: orderData.customer_name || 'Guest',
+                contact: orderData.customer_phone || '',
+            },
+            theme: {
+                color: '{{ tenant.primary_color }}',
+            },
+            modal: {
+                ondismiss: function() {
+                    alert('Payment cancelled. Your order is saved as pending.');
+                }
+            }
+        };
+        
+        const rzp = new Razorpay(options);
+        rzp.open();
+    }
+    
+    // Verify payment
+    async function verifyPayment(response, orderId) {
+        try {
+            const verifyResponse = await fetch('/payment/verify/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({
+                    order_id: orderId,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature,
+                }),
+            });
+            
+            const data = await verifyResponse.json();
+            
+            if (data.success) {
+                window.location.href = `/menu/thank-you/${orderId}/`;
+            } else {
+                alert('Payment verification failed. Please contact support.');
+            }
+        } catch (error) {
+            console.error('Verification error:', error);
+            alert('Payment verification failed. Please contact support.');
+        }
+    }
+    
+    // Scroll to category
+    function scrollToCategory(categoryId) {
+        const element = document.getElementById(`category-${categoryId}`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Update active tab
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+    
+    // Show added animation
+    function showAddedAnimation() {
+        // Add animation feedback
+        const cartBtn = document.querySelector('.cart-btn');
+        cartBtn.classList.add('bounce');
+        setTimeout(() => cartBtn.classList.remove('bounce'), 300);
+    }
+    
+    // Filter items by veg/non-veg
+    function filterItems(type) {
+        // Update active filter button
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`[data-filter="${type}"]`).classList.add('active');
+        
+        // Filter menu items
+        document.querySelectorAll('.menu-item').forEach(item => {
+            if (type === 'all') {
+                item.style.display = 'block';
+            } else {
+                const itemType = item.dataset.type;
+                if (itemType === type) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            }
+        });
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCart();
+    });
+</script>
+
+{% endblock %}

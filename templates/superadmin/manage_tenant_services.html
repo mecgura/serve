@@ -1,0 +1,150 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenant Services - Superadmin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; }
+        
+        .sidebar {
+            position: fixed; left: 0; top: 0; bottom: 0; width: 260px;
+            background: linear-gradient(180deg, #1e3a5f 0%, #0d2137 100%);
+            color: white; z-index: 100;
+        }
+        .sidebar-header { padding: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-menu { padding: 1rem 0; }
+        .menu-section { padding: 0.5rem 1.5rem; font-size: 0.7rem; text-transform: uppercase; opacity: 0.6; margin-top: 0.5rem; }
+        .menu-item {
+            display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.5rem;
+            color: white; text-decoration: none; transition: all 0.2s;
+        }
+        .menu-item:hover { background: rgba(255,255,255,0.1); }
+        .menu-item.active { background: rgba(255,255,255,0.2); border-left: 3px solid white; }
+        
+        .main-content { margin-left: 260px; min-height: 100vh; }
+        
+        .top-bar {
+            background: white; padding: 1rem 1.5rem;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .content { padding: 1.5rem; }
+        
+        .page-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .tenants-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .tenant-card {
+            background: white; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08); transition: all 0.3s;
+        }
+        .tenant-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
+        
+        .tenant-header {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white; padding: 1.5rem;
+        }
+        .tenant-header h3 { font-size: 1.2rem; margin-bottom: 0.25rem; }
+        .tenant-header p { opacity: 0.9; font-size: 0.9rem; }
+        
+        .tenant-body { padding: 1.5rem; }
+        
+        .service-stats {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .stat-item { text-align: center; }
+        .stat-number { font-size: 1.5rem; font-weight: 700; color: #3b82f6; }
+        .stat-label { font-size: 0.75rem; color: #666; }
+        
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 20px; border-radius: 8px; font-weight: 600;
+            text-decoration: none; transition: all 0.2s; border: none; cursor: pointer;
+            width: 100%; justify-content: center;
+        }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>MecGuraServe</h2>
+            <p>Superadmin Panel</p>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-section">Main</div>
+            <a href="/superadmin/" class="menu-item">
+                <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+            </a>
+            
+            <div class="menu-section">Management</div>
+            <a href="/superadmin/tenants/" class="menu-item">
+                <i class="fas fa-hotel"></i> <span>Resorts</span>
+            </a>
+            <a href="/superadmin/services/" class="menu-item">
+                <i class="fas fa-puzzle-piece"></i> <span>Services</span>
+            </a>
+            <a href="/superadmin/tenant-services/" class="menu-item active">
+                <i class="fas fa-plug"></i> <span>Tenant Services</span>
+            </a>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <div class="top-bar">
+            <h1>Tenant Services Management</h1>
+        </div>
+        
+        <div class="content">
+            <div class="page-header">
+                <h1>Select Resort to Manage Services</h1>
+            </div>
+            
+            <div class="tenants-grid">
+                {% for tenant in tenants %}
+                <div class="tenant-card">
+                    <div class="tenant-header">
+                        <h3><i class="fas fa-hotel"></i> {{ tenant.name }}</h3>
+                        <p>{{ tenant.slug }}.mecguraserve.com</p>
+                    </div>
+                    <div class="tenant-body">
+                        <div class="service-stats">
+                            <div class="stat-item">
+                                <div class="stat-number">29</div>
+                                <div class="stat-label">Available</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">{{ tenant.tenant_services.count }}</div>
+                                <div class="stat-label">Active</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">{{ tenant.plan }}</div>
+                                <div class="stat-label">Plan</div>
+                            </div>
+                        </div>
+                        
+                        <a href="/superadmin/tenant-services/{{ tenant.id }}/" class="btn btn-primary">
+                            <i class="fas fa-cog"></i> Manage Services
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>
