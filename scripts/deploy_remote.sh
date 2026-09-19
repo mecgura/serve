@@ -89,6 +89,11 @@ systemctl restart mecguraserve
 sleep 2
 systemctl status mecguraserve --no-pager || true
 
+echo "=== Freeing port 80 from old docker container ==="
+if command -v docker >/dev/null 2>&1 && docker ps --format '{{.Names}}' | grep -qx 'campus-caddy-1'; then
+  docker stop campus-caddy-1 || true
+fi
+
 echo "=== nginx reverse proxy ==="
 if command -v nginx >/dev/null 2>&1; then
   cat > /etc/nginx/sites-available/mecguraserve <<NGINX
