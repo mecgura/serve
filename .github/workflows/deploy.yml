@@ -25,7 +25,7 @@ jobs:
           missing=""
           [ -z "${{ secrets.VPS_HOST }}" ] && missing="$missing VPS_HOST"
           [ -z "${{ secrets.VPS_USERNAME }}" ] && missing="$missing VPS_USERNAME"
-          [ -z "${{ secrets.VPS_PASSWORD }}" ] && missing="$missing VPS_PASSWORD"
+          [ -z "${{ secrets.VPS_SSH_KEY }}" ] && missing="$missing VPS_SSH_KEY"
           if [ -n "$missing" ]; then
             echo "::error::Missing repo secrets:$missing — add them under Settings > Secrets and variables > Actions"
             exit 1
@@ -36,5 +36,5 @@ jobs:
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
-          password: ${{ secrets.VPS_PASSWORD }}
+          key: ${{ secrets.VPS_SSH_KEY }}
           script: ${{ steps.deploy_script.outputs.content }}
