@@ -23,12 +23,19 @@ git reset --hard "origin/$BRANCH"
 
 echo "=== Picking Python (Django 6 needs 3.12+) ==="
 PYBIN=python3
-if ! command -v python3.12 >/dev/null 2>&1; then
-  apt-get update -qq
-  apt-get install -y -qq python3.12 python3.12-venv python3.12-dev nginx || true
+PYOK=$(python3 -c 'import sys; print(1 if sys.version_info >= (3, 12) else 0)')
+if [ "$PYOK" != "1" ]; then
+  if ! command -v python3.12 >/dev/null 2>&1; then
+    apt-get update -qq
+    apt-get install -y -qq python3.12 python3.12-venv python3.12-dev || true
+  fi
+  if command -v python3.12 >/dev/null 2>&1; then
+    PYBIN=python3.12
+  fi
 fi
-if command -v python3.12 >/dev/null 2>&1; then
-  PYBIN=python3.12
+if ! command -v nginx >/dev/null 2>&1; then
+  apt-get update -qq
+  apt-get install -y -qq nginx || true
 fi
 echo "Using: $($PYBIN --version)"
 
