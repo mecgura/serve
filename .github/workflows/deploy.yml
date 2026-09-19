@@ -11,10 +11,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Read deploy script
+        id: deploy_script
+        run: |
+          {
+            echo 'content<<DEPLOY_SCRIPT_EOF'
+            cat scripts/deploy_remote.sh
+            echo 'DEPLOY_SCRIPT_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Check required secrets
+        run: |
+          missing=""
+          [ -z "${{ secrets.VPS_HOST }}" ] && missing="$missing VPS_HOST"
+          [ -z "${{ secrets.VPS_USERNAME }}" ] && missing="$missing VPS_USERNAME"
+          [ -z "${{ secrets.VPS_PASSWORD }}" ] && missing="$missing VPS_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repo secrets:$missing — add them under Settings > Secrets and variables > Actions"
+            exit 1
+          fi
+
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           password: ${{ secrets.VPS_PASSWORD }}
-          script_file: scripts/deploy_remote.sh
+          script: ${{ steps.deploy_script.outputs.content }}
