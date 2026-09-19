@@ -120,7 +120,13 @@ NGINX
   rm -f /etc/nginx/sites-enabled/default
   nginx -t
   systemctl enable nginx
-  systemctl restart nginx
+  systemctl restart nginx || {
+    echo "--- nginx failed to start, diagnostics: ---"
+    journalctl -xeu nginx --no-pager -n 40 || true
+    echo "--- what's listening on port 80: ---"
+    ss -tlnp | grep ':80 ' || true
+    exit 1
+  }
 else
   echo "nginx not available - install manually: apt install -y nginx"
 fi
