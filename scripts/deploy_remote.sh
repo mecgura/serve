@@ -125,6 +125,10 @@ NGINX
     journalctl -xeu nginx --no-pager -n 40 || true
     echo "--- what's listening on port 80: ---"
     ss -tlnp | grep ':80 ' || true
+    echo "--- docker containers publishing port 80 (diagnostic only, nothing stopped): ---"
+    if command -v docker >/dev/null 2>&1; then
+      docker ps --format '{{.ID}}  {{.Image}}  {{.Names}}  {{.Ports}}' | grep -E ':80->|0\.0\.0\.0:80' || docker ps --format '{{.ID}}  {{.Image}}  {{.Names}}  {{.Ports}}'
+    fi
     exit 1
   }
 else
