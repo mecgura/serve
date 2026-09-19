@@ -3,6 +3,8 @@ MecGuraServe - Tenant Middleware
 Identifies tenant from subdomain
 """
 
+import ipaddress
+
 from django.http import HttpResponseNotFound
 from django.db import connection
 
@@ -15,12 +17,18 @@ class TenantMiddleware:
 
     def __call__(self, request):
         host = request.get_host().split(':')[0]
-        
+
+        try:
+            ipaddress.ip_address(host)
+            is_ip = True
+        except ValueError:
+            is_ip = False
+
         # Extract subdomain
         parts = host.split('.')
-        
+
         # For localhost development, check for query param
-        if host in ['localhost', '127.0.0.1']:
+        if is_ip or host in ['localhost', '127.0.0.1']:
             # Development mode - use ?tenant=slug in URL or session
             tenant_slug = request.GET.get('tenant') or request.session.get('tenant_slug')
             if tenant_slug:
