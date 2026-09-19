@@ -118,7 +118,9 @@ server {
 NGINX
   ln -sf /etc/nginx/sites-available/mecguraserve /etc/nginx/sites-enabled/mecguraserve
   rm -f /etc/nginx/sites-enabled/default
-  nginx -t && systemctl reload nginx
+  nginx -t
+  systemctl enable nginx
+  systemctl restart nginx
 else
   echo "nginx not available - install manually: apt install -y nginx"
 fi
